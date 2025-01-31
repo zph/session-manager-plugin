@@ -1,12 +1,9 @@
-module github.com/formalco/session-manager-plugin
+module github.com/aws/session-manager-plugin
 
 go 1.23.5
 
-replace github.com/aws/session-manager-plugin => ./
-
 require (
 	github.com/aws/aws-sdk-go v1.55.6
-	github.com/aws/session-manager-plugin v0.0.0-20241119210807-82dc72922492
 	github.com/cihub/seelog v0.0.0-20170130134532-f561c5e57575
 	github.com/eiannone/keyboard v0.0.0-20220611211555-0d226195f203
 	github.com/fsnotify/fsnotify v1.8.0

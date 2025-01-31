@@ -71,19 +71,29 @@ func Register(session ISessionPlugin) {
 }
 
 type Session struct {
-	DataChannel           datachannel.IDataChannel
-	SessionId             string
-	StreamUrl             string
-	TokenValue            string
-	IsAwsCliUpgradeNeeded bool
-	Endpoint              string
-	ClientId              string
-	TargetId              string
-	sdk                   *ssm.SSM
-	retryParams           retry.RepeatableExponentialRetryer
-	SessionType           string
-	SessionProperties     interface{}
-	DisplayMode           sessionutil.DisplayMode
+	DataChannel                  datachannel.IDataChannel
+	SessionId                    string
+	StreamUrl                    string
+	TokenValue                   string
+	IsAwsCliUpgradeNeeded        bool
+	Endpoint                     string
+	ClientId                     string
+	TargetId                     string
+	sdk                          *ssm.SSM
+	retryParams                  retry.RepeatableExponentialRetryer
+	SessionType                  string
+	SessionProperties            interface{}
+	DisplayMode                  sessionutil.DisplayMode
+	PortForwardingUseUnixSocket  bool
+	PortForwardingUnixSocketPath string
+}
+
+type PortParameters struct {
+	PortNumber          string `json:"portNumber"`
+	LocalPortNumber     string `json:"localPortNumber"`
+	LocalUnixSocket     string `json:"localUnixSocket"`
+	LocalConnectionType string `json:"localConnectionType"`
+	Type                string `json:"type"`
 }
 
 // startSession create the datachannel for session
@@ -232,6 +242,20 @@ func (s *Session) Execute(log log.T) (err error) {
 	} else {
 		s.SessionType = s.DataChannel.GetSessionType()
 		s.SessionProperties = s.DataChannel.GetSessionProperties()
+
+		// The default AWS-StartPortForwardingSession document doesn't have space to express the use of unix socket
+		// even though this plugin supports it. Instead if the library client asks to use a unix socket, we'll override
+		// the session properties to do so.
+		if s.SessionType == config.PortPluginName && s.PortForwardingUseUnixSocket {
+			var portParameters PortParameters
+			portParameters.Type = "LocalPortForwarding"
+			portParameters.LocalConnectionType = "unix"
+			portParameters.LocalUnixSocket = s.PortForwardingUnixSocketPath
+			s.SessionProperties = interface{}(portParameters)
+		}
+
+		fmt.Fprintf(os.Stderr, "session: %+v\n", s)
+
 		if err = setSessionHandlersWithSessionType(s, log); err != nil {
 			if s.DataChannel.IsSessionEnded() == false {
 				log.Errorf("Session ending with error: %v", err)

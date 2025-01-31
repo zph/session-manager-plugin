@@ -15,6 +15,9 @@
 package portsession
 
 import (
+	"fmt"
+	"os"
+
 	"github.com/aws/session-manager-plugin/src/config"
 	"github.com/aws/session-manager-plugin/src/jsonutil"
 	"github.com/aws/session-manager-plugin/src/log"
@@ -66,12 +69,14 @@ func (s *PortSession) Initialize(log log.T, sessionVar *session.Session) {
 
 	if s.portParameters.Type == LocalPortForwardingType {
 		if version.DoesAgentSupportTCPMultiplexing(log, s.DataChannel.GetAgentVersion()) {
+			fmt.Fprintf(os.Stderr, "Using MuxPortForwarding with portParameters: %v\n", s.portParameters)
 			s.portSessionType = &MuxPortForwarding{
 				sessionId:      s.SessionId,
 				portParameters: s.portParameters,
 				session:        s.Session,
 			}
 		} else {
+			fmt.Fprintf(os.Stderr, "Using BasicPortForwarding with portParameters: %v\n", s.portParameters)
 			s.portSessionType = &BasicPortForwarding{
 				sessionId:      s.SessionId,
 				portParameters: s.portParameters,
