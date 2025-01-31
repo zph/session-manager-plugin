@@ -25,8 +25,8 @@ import (
 	"time"
 
 	"github.com/aws/session-manager-plugin/src/log"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
-	"github.com/twinj/uuid"
 )
 
 type EXPECTATION int

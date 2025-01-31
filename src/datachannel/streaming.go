@@ -36,8 +36,8 @@ import (
 	"github.com/aws/session-manager-plugin/src/message"
 	"github.com/aws/session-manager-plugin/src/service"
 	"github.com/aws/session-manager-plugin/src/version"
+	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
-	"github.com/twinj/uuid"
 )
 
 type IDataChannel interface {
@@ -206,8 +206,7 @@ func (dataChannel *DataChannel) SetWebsocket(log log.T, channelUrl string, chann
 
 // FinalizeHandshake sends the token for service to acknowledge the connection.
 func (dataChannel *DataChannel) FinalizeDataChannelHandshake(log log.T, tokenValue string) (err error) {
-	uuid.SwitchFormat(uuid.FormatCanonical)
-	uid := uuid.NewV4().String()
+	uid := uuid.NewString()
 
 	log.Infof("Sending token through data channel %s to acknowledge connection", dataChannel.wsChannel.GetStreamUrl())
 	openDataChannelInput := service.OpenDataChannelInput{
@@ -289,7 +288,7 @@ func (dataChannel *DataChannel) SendInputDataMessage(
 		msg  []byte
 	)
 
-	messageId := uuid.NewV4()
+	messageId := uuid.New()
 
 	// today 'enter' is taken as 'next line' in winpty shell. so hardcoding 'next line' byte to actual 'enter' byte
 	if bytes.Equal(inputData, []byte{10}) {

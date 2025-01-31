@@ -31,7 +31,7 @@ import (
 	_ "github.com/aws/session-manager-plugin/src/sessionmanagerplugin/session/portsession"
 	_ "github.com/aws/session-manager-plugin/src/sessionmanagerplugin/session/shellsession"
 	"github.com/aws/session-manager-plugin/src/ssmclicommands/utils"
-	"github.com/twinj/uuid"
+	"github.com/google/uuid"
 )
 
 const (
@@ -182,7 +182,7 @@ func (s *StartSessionCommand) Execute(parameters map[string][]string) (error, st
 		return err, "StartSession failed"
 	}
 	log.Infof("For SessionId: %s, StartSession returned streamUrl: %s", sessionId, streamUrl)
-	clientId := uuid.NewV4().String()
+	clientId := uuid.NewString()
 
 	session := session.Session{
 		SessionId:   sessionId,
@@ -235,7 +235,6 @@ func contains(arr []string, item string) bool {
 // function to get start-session parameters
 func (s *StartSessionCommand) getStartSessionParams(log log.T, parameters map[string][]string) (string, string, string, error) {
 	//Fetch command token
-	uuid.SwitchFormat(uuid.CleanHyphen)
 
 	startSessionInput := ssm.StartSessionInput{
 		Target: &parameters[INSTANCE_ID][0],
