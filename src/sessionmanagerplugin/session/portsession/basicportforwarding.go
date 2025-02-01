@@ -124,7 +124,6 @@ func (p *BasicPortForwarding) startLocalConn(log log.T) (err error) {
 	}
 	if p.session.DataChannel.IsSessionEnded() == false {
 		log.Infof("Connection accepted for session %s.", p.sessionId)
-		fmt.Printf("Connection accepted for session %s.\n", p.sessionId)
 	}
 
 	return
@@ -149,7 +148,6 @@ func (p *BasicPortForwarding) startLocalListener(log log.T, portNumber string) (
 	}
 
 	log.Info(displayMessage)
-	fmt.Println(displayMessage)
 	return
 }
 
@@ -159,14 +157,11 @@ func (p *BasicPortForwarding) handleControlSignals(log log.T) {
 	signal.Notify(c, sessionutil.ControlSignals...)
 	go func() {
 		<-c
-		fmt.Println("Terminate signal received, exiting.")
-
 		p.session.DataChannel.EndSession()
 		if version.DoesAgentSupportTerminateSessionFlag(log, p.session.DataChannel.GetAgentVersion()) {
 			if err := p.session.DataChannel.SendFlag(log, message.TerminateSession); err != nil {
 				log.Errorf("Failed to send TerminateSession flag: %v", err)
 			}
-			fmt.Fprintf(os.Stdout, "\n\nExiting session with sessionId: %s.\n\n", p.sessionId)
 		} else {
 			p.session.TerminateSession(log)
 		}

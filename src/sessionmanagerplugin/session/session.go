@@ -19,7 +19,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"os"
 	"time"
 
 	"github.com/aws/session-manager-plugin/src/config"
@@ -226,8 +225,6 @@ func ValidateInputAndStartSession(args []string, out io.Writer) {
 
 // Execute create data channel and start the session
 func (s *Session) Execute(log log.T) (err error) {
-	fmt.Fprintf(os.Stdout, "\nStarting session with SessionId: %s\n", s.SessionId)
-
 	// sets the display mode
 	s.DisplayMode = sessionutil.NewDisplayMode(log)
 
@@ -256,8 +253,6 @@ func (s *Session) Execute(log log.T) (err error) {
 			portParameters.LocalUnixSocket = s.PortForwardingUnixSocketPath
 			s.SessionProperties = interface{}(portParameters)
 		}
-
-		fmt.Fprintf(os.Stderr, "session: %+v\n", s)
 
 		if err = setSessionHandlersWithSessionType(s, log); err != nil {
 			if s.DataChannel.IsSessionEnded() == false {

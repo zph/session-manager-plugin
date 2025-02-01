@@ -15,7 +15,6 @@
 package main
 
 import (
-	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -47,8 +46,6 @@ func main() {
 		log.Fatalf("Error reading VERSION file. %v", err)
 	}
 	versionStr := string(versionContent)
-
-	fmt.Printf("Session Manager Plugin Version: %v\n", versionStr)
 
 	if err := ioutil.WriteFile(filepath.Join("VERSION"), []byte(versionStr), ReadWriteAccess); err != nil {
 		log.Fatalf("Error writing to VERSION file. %v", err)

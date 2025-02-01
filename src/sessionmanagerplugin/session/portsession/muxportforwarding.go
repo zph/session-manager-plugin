@@ -141,10 +141,6 @@ func (p *MuxPortForwarding) WriteStream(outputMessage message.ClientMessage) err
 		var flag message.PayloadTypeFlag
 		buf := bytes.NewBuffer(outputMessage.Payload)
 		binary.Read(buf, binary.BigEndian, &flag)
-
-		if message.ConnectToPortError == flag {
-			fmt.Printf("\nConnection to destination port failed, check SSM Agent logs.\n")
-		}
 	}
 	return nil
 }
@@ -202,8 +198,6 @@ func (p *MuxPortForwarding) handleControlSignals(log log.T) {
 	signal.Notify(c, sessionutil.ControlSignals...)
 	go func() {
 		<-c
-		fmt.Println("Terminate signal received, exiting.")
-
 		if err := p.session.DataChannel.SendFlag(log, message.TerminateSession); err != nil {
 			log.Errorf("Failed to send TerminateSession flag: %v", err)
 		}
@@ -262,12 +256,9 @@ func (p *MuxPortForwarding) handleClientConnections(log log.T, ctx context.Conte
 	defer p.muxClient.localListener.Close()
 
 	log.Infof(displayMsg)
-	fmt.Printf(displayMsg)
 
 	log.Infof("Waiting for connections...\n")
-	fmt.Printf("\nWaiting for connections...\n")
 
-	var once sync.Once
 	for {
 		select {
 		case <-ctx.Done():
@@ -277,10 +268,6 @@ func (p *MuxPortForwarding) handleClientConnections(log log.T, ctx context.Conte
 				log.Errorf("Error while accepting connection: %v", err)
 			} else {
 				log.Infof("Connection accepted from %s\n for session [%s]", conn.RemoteAddr(), p.sessionId)
-
-				once.Do(func() {
-					fmt.Printf("\nConnection accepted for session [%s]\n", p.sessionId)
-				})
 
 				stream, err := p.muxClient.session.OpenStream()
 				if err != nil {

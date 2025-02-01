@@ -22,7 +22,6 @@ import (
 	"errors"
 	"fmt"
 	"math"
-	"os"
 	"reflect"
 	"sync"
 	"time"
@@ -526,10 +525,6 @@ func (dataChannel *DataChannel) handleHandshakeComplete(log log.T, clientMessage
 	log.Debugf("Handshake Complete. Handshake time to complete is: %s seconds",
 		handshakeComplete.HandshakeTimeToComplete.Seconds())
 
-	if handshakeComplete.CustomerMessage != "" {
-		fmt.Fprintln(os.Stdout, handshakeComplete.CustomerMessage)
-	}
-
 	return err
 }
 
@@ -819,11 +814,6 @@ func (dataChannel *DataChannel) HandleChannelClosedMessage(log log.T, stopHandle
 	}
 
 	log.Infof("Exiting session with sessionId: %s with output: %s", sessionId, channelClosedMessage.Output)
-	if channelClosedMessage.Output == "" {
-		fmt.Fprintf(os.Stdout, "\n\nExiting session with sessionId: %s.\n\n", sessionId)
-	} else {
-		fmt.Fprintf(os.Stdout, "\n\nSessionId: %s : %s\n\n", sessionId, channelClosedMessage.Output)
-	}
 	dataChannel.EndSession()
 	dataChannel.Close(log)
 

@@ -15,7 +15,6 @@
 package portsession
 
 import (
-	"fmt"
 	"io"
 	"os"
 	"os/signal"
@@ -62,8 +61,6 @@ func (p *StandardStreamForwarding) handleControlSignals(log log.T) {
 	signal.Notify(c, sessionutil.ControlSignals...)
 	go func() {
 		<-c
-		fmt.Println("Terminate signal received, exiting.")
-
 		p.session.DataChannel.EndSession()
 		p.Stop()
 	}()
