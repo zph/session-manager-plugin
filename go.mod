@@ -4,11 +4,10 @@ go 1.23.5
 
 require (
 	github.com/aws/aws-sdk-go v1.55.6
-	github.com/cihub/seelog v0.0.0-20170130134532-f561c5e57575
 	github.com/eiannone/keyboard v0.0.0-20220611211555-0d226195f203
-	github.com/fsnotify/fsnotify v1.8.0
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/websocket v1.5.3
+	github.com/rs/zerolog v1.33.0
 	github.com/stretchr/testify v1.10.0
 	github.com/xtaci/smux v1.5.33
 	golang.org/x/crypto v0.32.0
@@ -19,6 +18,8 @@ require (
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
+	github.com/mattn/go-colorable v0.1.13 // indirect
+	github.com/mattn/go-isatty v0.0.19 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/stretchr/objx v0.5.2 // indirect
 	golang.org/x/term v0.28.0 // indirect
