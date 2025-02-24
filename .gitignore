@@ -11,3 +11,5 @@
 bin/
 build
 vendor/src/github.com/aws/session-manager-plugin
+# GoReleaser
+dist/

@@ -1,0 +1,64 @@
+# This is an example .goreleaser.yml file with some sensible defaults.
+# Make sure to check the documentation at https://goreleaser.com
+version: 2
+before:
+  hooks:
+    - go run ./src/version/versiongenerator/version-gen.go
+    - goimports -w ./src
+    - gofmt -w ./src
+    # You may remove this if you don't use go modules.
+    - go mod tidy
+
+builds:
+  - env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      # Disabled because of existing compilation failures
+      # - windows
+    goarch:
+      - amd64
+      - arm64
+    # Added ldflags configuration
+    ldflags:
+      - -s -w
+    # Binary naming template
+    binary: "{{ .ProjectName }}"
+    # Main package path
+    main: ./src/sessionmanagerplugin-main/main.go
+
+archives:
+  - format: tar.gz
+    # this name template makes the OS and Arch compatible with the results of `uname`.
+    name_template: >-
+      {{ .ProjectName }}_
+      {{- title .Os }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else if eq .Arch "386" }}i386
+      {{- else }}{{ .Arch }}{{ end }}
+    files:
+      - LICENSE
+      - NOTICE
+      - THIRD-PARTY
+      - RELEASENOTES.md
+      - README.md
+    # use zip for windows archives
+    format_overrides:
+      - goos: windows
+        format: zip
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+      - '^ci:'
+      - '^chore:'
+
+# Uncomment the following lines if you want to publish to GitHub
+# release:
+#   github:
+#     owner: zph
+#     name: session-manager-plugin
