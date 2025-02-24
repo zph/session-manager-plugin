@@ -6,6 +6,7 @@ before:
     - go run ./src/version/versiongenerator/version-gen.go
     - goimports -w ./src
     - gofmt -w ./src
+    - go vet ./src/...
     # You may remove this if you don't use go modules.
     - go mod tidy
 
