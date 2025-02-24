@@ -114,6 +114,7 @@ func TestExecute(t *testing.T) {
 	mockDataChannel.On("IsSessionTypeSet").Return(isSessionTypeSetMock)
 	mockDataChannel.On("GetSessionType").Return("Standard_Stream")
 	mockDataChannel.On("GetSessionProperties").Return("SessionProperties")
+	mockDataChannel.On("IsSessionEnded").Return(false)
 
 	isStreamMessageResendTimeout := make(chan bool, 1)
 	mockDataChannel.On("IsStreamMessageResendTimeout").Return(isStreamMessageResendTimeout)

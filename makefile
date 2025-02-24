@@ -1,5 +1,5 @@
 COPY := cp -p
-GO_BUILD := go build -i
+GO_BUILD := go build
 
 # Default build configuration, can be overridden at build time.
 GOARCH?=$(shell go env GOARCH)
