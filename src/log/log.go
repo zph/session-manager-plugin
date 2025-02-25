@@ -70,7 +70,7 @@ const (
 )
 
 var (
-	DefaultSeelogConfigFilePath string
+	DefaultSeelogConfigFilePath string // Maintained for backward compatibility
 	DefaultLogDir               string
 	ApplicationLogFile          string
 	ErrorLogFile                string
