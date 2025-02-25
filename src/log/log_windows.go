@@ -18,10 +18,7 @@
 package log
 
 import (
-	"fmt"
-	"io/ioutil"
 	"os"
-	"path/filepath"
 )
 
 const (
@@ -41,25 +38,4 @@ func getApplicationName(clientName string) string {
 	}
 
 	return applicationName
-}
-
-// getLogConfigBytes reads and returns the seelog configs from the config file path if present
-// otherwise returns the seelog default configurations
-// Windows uses default log configuration if there is no seelog.xml override provided.
-func getLogConfigBytes(clientName string) (logConfigBytes []byte) {
-	DefaultProgramFolder := filepath.Join(
-		EnvProgramFiles,
-		ApplicationFolderPrefix,
-		getApplicationName(clientName))
-	DefaultSeelogConfigFilePath = filepath.Join(DefaultProgramFolder, SeelogConfigFileName)
-	DefaultLogDir = filepath.Join(
-		DefaultProgramFolder,
-		LogsDirectory)
-	ApplicationLogFile = fmt.Sprintf("%s%s", clientName, LogFileExtension)
-	ErrorLogFile = fmt.Sprintf("%s%s", ErrorLogFileSuffix, LogFileExtension)
-
-	if logConfigBytes, err = ioutil.ReadFile(DefaultSeelogConfigFilePath); err != nil {
-		logConfigBytes = DefaultConfig()
-	}
-	return
 }
