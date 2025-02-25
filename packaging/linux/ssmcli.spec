@@ -15,7 +15,6 @@ This package provides Amazon SSM CLI for managing shell experience using SSM API
 
 %files
 %defattr(-,root,root,-)
-/etc/amazon/ssmcli/seelog.xml.template
 /usr/bin/ssmcli
 /var/lib/amazon/ssmcli/
 

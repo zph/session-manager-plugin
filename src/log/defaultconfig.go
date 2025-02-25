@@ -28,6 +28,7 @@ func LoadLog(defaultLogDir string, logFile string, errorFile string) []byte {
 	logFilePath = filepath.Join(defaultLogDir, logFile)
 	errorFilePath = filepath.Join(defaultLogDir, errorFile)
 
+	// TODO(zph): remove final seelog.xml reference
 	logConfig := `
 <seelog type="adaptive" mininterval="2000000" maxinterval="100000000" critmsgcount="500" minlevel="off">
     <exceptions>
