@@ -17,7 +17,6 @@ echo "Copying application files"
 
 mkdir -p ${PACKAGE_FOLDER}/bin
 cp ${BUILD_FOLDER}/session-manager-plugin.exe ${PACKAGE_FOLDER}/bin/session-manager-plugin.exe
-cp ${GO_SPACE}/seelog_windows.xml.template ${PACKAGE_FOLDER}/seelog.xml.template
 
 echo "Copying windows package config files"
 

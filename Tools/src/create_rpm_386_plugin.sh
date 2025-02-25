@@ -29,7 +29,6 @@ cp ${GO_SPACE}/RELEASENOTES.md ${GO_SPACE}/bin/linux_386_plugin/linux/usr/local/
 cp ${GO_SPACE}/THIRD-PARTY ${GO_SPACE}/bin/linux_386_plugin/linux/usr/local/sessionmanagerplugin/THIRD-PARTY
 cp ${GO_SPACE}/VERSION ${GO_SPACE}/bin/linux_386_plugin/linux/usr/local/sessionmanagerplugin/VERSION
 cp ${GO_SPACE}/bin/linux_386_plugin/session-manager-plugin ${GO_SPACE}/bin/linux_386_plugin/linux/usr/local/sessionmanagerplugin/bin/
-cp ${GO_SPACE}/seelog_unix.xml ${GO_SPACE}/bin/linux_386_plugin/linux/usr/local/sessionmanagerplugin/seelog.xml.template
 cp ${GO_SPACE}/packaging/linux_plugin/session-manager-plugin.conf ${GO_SPACE}/bin/linux_386_plugin/linux/etc/init/
 cp ${GO_SPACE}/packaging/linux_plugin/session-manager-plugin.service ${GO_SPACE}/bin/linux_386_plugin/linux/etc/systemd/system/
 cd ${GO_SPACE}/bin/linux_386_plugin/linux/usr/local/sessionmanagerplugin/bin/; strip --strip-unneeded session-manager-plugin; cd ~-

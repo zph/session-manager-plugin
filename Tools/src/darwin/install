@@ -13,7 +13,6 @@ It also creates a symlink session-manager-plugin in the /usr/local/bin directory
 PLUGIN_FILE = "session-manager-plugin"
 VERSION_FILE = "VERSION"
 LICENSE_FILE = "LICENSE"
-SEELOG_FILE = "seelog.xml.template"
 
 INSTALL_DIR = "/usr/local/sessionmanagerplugin"
 SYMLINK_NAME = "/usr/local/bin/{}".format(PLUGIN_FILE)
@@ -56,10 +55,6 @@ def main():
         current_bin_location = os.path.join(current_working_directory, 'bin', PLUGIN_FILE)
         shutil.copy2(current_bin_location, install_bin_folder)
         current_bin_folder = install_bin_folder
-
-        # Copy see_log file
-        seelog_location = os.path.join(current_working_directory, SEELOG_FILE)
-        shutil.copy2(seelog_location, options.install_dir)
 
         # Copy Version File
         version_file_location = os.path.join(current_working_directory, VERSION_FILE)

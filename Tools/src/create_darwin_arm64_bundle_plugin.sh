@@ -18,7 +18,6 @@ cp ${GO_SPACE}/README.md ${GO_SPACE}/bin/darwin_arm64_plugin/sessionmanager-bund
 cp ${GO_SPACE}/RELEASENOTES.md ${GO_SPACE}/bin/darwin_arm64_plugin/sessionmanager-bundle/RELEASENOTES.md
 cp ${GO_SPACE}/VERSION ${GO_SPACE}/bin/darwin_arm64_plugin/sessionmanager-bundle/VERSION
 cp ${GO_SPACE}/bin/darwin_arm64_plugin/session-manager-plugin ${GO_SPACE}/bin/darwin_arm64_plugin/sessionmanager-bundle/bin/session-manager-plugin
-cp ${GO_SPACE}/seelog_unix.xml ${GO_SPACE}/bin/darwin_arm64_plugin/sessionmanager-bundle/seelog.xml.template
 
 echo "Copying install script"
 
