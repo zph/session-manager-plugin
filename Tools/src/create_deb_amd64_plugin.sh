@@ -18,7 +18,6 @@ echo "Copying application files"
 
 cp ${GO_SPACE}/bin/linux_amd64_plugin/session-manager-plugin ${GO_SPACE}/bin/debian_amd64/debian/usr/local/sessionmanagerplugin/bin/
 cd ${GO_SPACE}/bin/debian_amd64/debian/usr/local/sessionmanagerplugin/bin/; strip --strip-unneeded session-manager-plugin; cd ~-
-cp ${GO_SPACE}/seelog_unix.xml ${GO_SPACE}/bin/debian_amd64/debian/usr/local/sessionmanagerplugin/seelog.xml.template
 cp ${GO_SPACE}/packaging/ubuntu_plugin/session-manager-plugin.conf ${GO_SPACE}/bin/debian_amd64/debian/etc/init/
 cp ${GO_SPACE}/packaging/ubuntu_plugin/session-manager-plugin.service ${GO_SPACE}/bin/debian_amd64/debian/lib/systemd/system/
 

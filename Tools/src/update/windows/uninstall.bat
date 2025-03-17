@@ -4,7 +4,6 @@ setlocal
 set ServiceName=session-manager-plugin
 set ProgramFilesAmazonFolder=%PROGRAMFILES%\Amazon
 set ProgramFilesSSMCLIFolder=%ProgramFilesAmazonFolder%\SessionManagerPlugin
-set CustomizedSeelog=%ProgramFilesSSMCLIFolder%\seelog.xml
 
 :BEGIN
 echo [INFO] Detecting administrative permissions...
@@ -45,7 +44,6 @@ rem Loop through non-folders, keep the customized files.
 set HasCustomizedSettings=
 for /f "delims=" %%i in ('dir /b /a:-d "%ProgramFilesSSMCLIFolder%\*.*"') do (
   set IsCustomized=
-  if /I "%ProgramFilesSSMCLIFolder%\%%i" equ "%CustomizedSeelog%" set IsCustomized=1
   if defined IsCustomized (
     set HasCustomizedSettings=1
     echo [INFO] Keep %ProgramFilesSSMCLIFolder%\%%i.

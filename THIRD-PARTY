@@ -3,8 +3,6 @@ or your relevant customer agreement with AWS, and is licensed to you under that 
 
 The Amazon Session Manager Plugin includes the following third-party software/licensing:
 
-** cihub/seelog - https://github.com/cihub/seelog
-Copyright (c) 2012, Cloud Instruments Co., Ltd. <info@cin.io>. All rights reserved.
 ** gorilla/websocket - https://github.com/gorilla/websocket
 Copyright (c) 2013 The Gorilla WebSocket Authors. All rights reserved.
 ** fsnotigy/fsnotify - https://github.com/fsnotify/fsnotify

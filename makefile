@@ -1,5 +1,5 @@
 COPY := cp -p
-GO_BUILD := go build -i
+GO_BUILD := go build
 
 # Default build configuration, can be overridden at build time.
 GOARCH?=$(shell go env GOARCH)
@@ -56,8 +56,6 @@ pre-build:
 	$(COPY) $(GO_SPACE)/README.md $(GO_SPACE)/bin/
 	$(COPY) $(GO_SPACE)/RELEASENOTES.md $(GO_SPACE)/bin/
 	$(COPY) $(GO_SPACE)/THIRD-PARTY $(GO_SPACE)/bin/
-	$(COPY) $(GO_SPACE)/seelog_unix.xml $(GO_SPACE)/bin/
-	$(COPY) $(GO_SPACE)/seelog_windows.xml.template $(GO_SPACE)/bin/
 
 	@echo "Regenerate version file during pre-release"
 	go run $(GO_SPACE)/src/version/versiongenerator/version-gen.go
@@ -147,34 +145,29 @@ prepack-linux-amd64:
 	mkdir -p $(GO_SPACE)/bin/prepacked/linux_amd64
 	mkdir -p $(GO_SPACE)/bin/prepacked/linux_amd64_plugin
 	$(COPY) $(GO_SPACE)/bin/linux_amd64_plugin/session-manager-plugin $(GO_SPACE)/bin/prepacked/linux_amd64_plugin/session-manager-plugin
-	$(COPY) $(GO_SPACE)/bin/seelog_unix.xml $(GO_SPACE)/bin/prepacked/linux_amd64_plugin/seelog.xml
 	$(COPY) $(GO_SPACE)/bin/LICENSE $(GO_SPACE)/bin/prepacked/linux_amd64_plugin/LICENSE
 	$(COPY) $(GO_SPACE)/bin/NOTICE $(GO_SPACE)/bin/prepacked/linux_amd64_plugin/NOTICE
 	$(COPY) $(GO_SPACE)/bin/README.md $(GO_SPACE)/bin/prepacked/linux_amd64_plugin/README.md
 	$(COPY) $(GO_SPACE)/bin/RELEASENOTES.md $(GO_SPACE)/bin/prepacked/linux_amd64_plugin/RELEASENOTES.md
 	$(COPY) $(GO_SPACE)/bin/THIRD-PARTY $(GO_SPACE)/bin/prepacked/linux_amd64_plugin/THIRD-PARTY
 	$(COPY) $(GO_SPACE)/bin/linux_amd64/ssmcli $(GO_SPACE)/bin/prepacked/linux_amd64/ssmcli
-	$(COPY) $(GO_SPACE)/bin/seelog_unix.xml $(GO_SPACE)/bin/prepacked/linux_amd64/seelog.xml.template
 
 .PHONY: prepack-linux-386
 prepack-linux-386:
 	mkdir -p $(GO_SPACE)/bin/prepacked/linux_386
 	mkdir -p $(GO_SPACE)/bin/prepacked/linux_386_plugin
 	$(COPY) $(GO_SPACE)/bin/linux_386_plugin/session-manager-plugin $(GO_SPACE)/bin/prepacked/linux_386_plugin/session-manager-plugin
-	$(COPY) $(GO_SPACE)/bin/seelog_unix.xml $(GO_SPACE)/bin/prepacked/linux_386_plugin/seelog.xml
 	$(COPY) $(GO_SPACE)/bin/LICENSE $(GO_SPACE)/bin/prepacked/linux_386_plugin/LICENSE
 	$(COPY) $(GO_SPACE)/bin/NOTICE $(GO_SPACE)/bin/prepacked/linux_386_plugin/NOTICE
 	$(COPY) $(GO_SPACE)/bin/README.md $(GO_SPACE)/bin/prepacked/linux_386_plugin/README.md
 	$(COPY) $(GO_SPACE)/bin/RELEASENOTES.md $(GO_SPACE)/bin/prepacked/linux_386_plugin/RELEASENOTES.md
 	$(COPY) $(GO_SPACE)/bin/THIRD-PARTY $(GO_SPACE)/bin/prepacked/linux_386_plugin/THIRD-PARTY
 	$(COPY) $(GO_SPACE)/bin/linux_386/ssmcli $(GO_SPACE)/bin/prepacked/linux_386/ssmcli
-	$(COPY) $(GO_SPACE)/bin/seelog_unix.xml $(GO_SPACE)/bin/prepacked/linux_386/seelog.xml.template
 
 .PHONY: prepack-linux-arm64
 prepack-linux-arm64:
 	mkdir -p $(GO_SPACE)/bin/prepacked/linux_arm64_plugin
 	$(COPY) $(GO_SPACE)/bin/linux_arm64_plugin/session-manager-plugin $(GO_SPACE)/bin/prepacked/linux_arm64_plugin/session-manager-plugin
-	$(COPY) $(GO_SPACE)/bin/seelog_unix.xml $(GO_SPACE)/bin/prepacked/linux_arm64_plugin/seelog.xml
 	$(COPY) $(GO_SPACE)/bin/LICENSE $(GO_SPACE)/bin/prepacked/linux_arm64_plugin/LICENSE
 	$(COPY) $(GO_SPACE)/bin/NOTICE $(GO_SPACE)/bin/prepacked/linux_arm64_plugin/NOTICE
 	$(COPY) $(GO_SPACE)/bin/README.md $(GO_SPACE)/bin/prepacked/linux_arm64_plugin/README.md
@@ -186,28 +179,24 @@ prepack-windows-386:
 	mkdir -p $(GO_SPACE)/bin/prepacked/windows_386
 	mkdir -p $(GO_SPACE)/bin/prepacked/windows_386_plugin
 	$(COPY) $(GO_SPACE)/bin/windows_386_plugin/session-manager-plugin.exe $(GO_SPACE)/bin/prepacked/windows_386_plugin/session-manager-plugin.exe
-	$(COPY) $(GO_SPACE)/bin/seelog_windows.xml.template $(GO_SPACE)/bin/prepacked/windows_386_plugin/seelog.xml.template
 	$(COPY) $(GO_SPACE)/bin/LICENSE $(GO_SPACE)/bin/prepacked/windows_386_plugin/LICENSE
 	$(COPY) $(GO_SPACE)/bin/NOTICE $(GO_SPACE)/bin/prepacked/windows_386_plugin/NOTICE
 	$(COPY) $(GO_SPACE)/bin/README.md $(GO_SPACE)/bin/prepacked/windows_386_plugin/README.md
 	$(COPY) $(GO_SPACE)/bin/RELEASENOTES.md $(GO_SPACE)/bin/prepacked/windows_386_plugin/RELEASENOTES.md
 	$(COPY) $(GO_SPACE)/bin/THIRD-PARTY $(GO_SPACE)/bin/prepacked/windows_386_plugin/THIRD-PARTY
 	$(COPY) $(GO_SPACE)/bin/windows_386/ssmcli.exe $(GO_SPACE)/bin/prepacked/windows_386/ssmcli.exe
-	$(COPY) $(GO_SPACE)/bin/seelog_windows.xml.template $(GO_SPACE)/bin/prepacked/windows_386/seelog.xml.template
 
 .PHONY: prepack-windows-amd64
 prepack-windows-amd64:
 	mkdir -p $(GO_SPACE)/bin/prepacked/windows_amd64
 	mkdir -p $(GO_SPACE)/bin/prepacked/windows_amd64_plugin
 	$(COPY) $(GO_SPACE)/bin/windows_amd64_plugin/session-manager-plugin.exe $(GO_SPACE)/bin/prepacked/windows_amd64_plugin/session-manager-plugin.exe
-	$(COPY) $(GO_SPACE)/bin/seelog_windows.xml.template $(GO_SPACE)/bin/prepacked/windows_amd64_plugin/seelog.xml.template
 	$(COPY) $(GO_SPACE)/bin/LICENSE $(GO_SPACE)/bin/prepacked/windows_amd64_plugin/LICENSE
 	$(COPY) $(GO_SPACE)/bin/NOTICE $(GO_SPACE)/bin/prepacked/windows_amd64_plugin/NOTICE
 	$(COPY) $(GO_SPACE)/bin/README.md $(GO_SPACE)/bin/prepacked/windows_amd64_plugin/README.md
 	$(COPY) $(GO_SPACE)/bin/RELEASENOTES.md $(GO_SPACE)/bin/prepacked/windows_amd64_plugin/RELEASENOTES.md
 	$(COPY) $(GO_SPACE)/bin/THIRD-PARTY $(GO_SPACE)/bin/prepacked/windows_amd64_plugin/THIRD-PARTY
 	$(COPY) $(GO_SPACE)/bin/windows_amd64/ssmcli.exe $(GO_SPACE)/bin/prepacked/windows_amd64/ssmcli.exe
-	$(COPY) $(GO_SPACE)/bin/seelog_windows.xml.template $(GO_SPACE)/bin/prepacked/windows_amd64/seelog.xml.template
 
 .PHONY: package-rpm-amd64
 package-rpm-amd64: create-package-folder
@@ -262,9 +251,6 @@ copy-package-dependencies:
 
 	$(COPY) -r $(GO_SPACE)/Tools $(GO_SPACE)/bin/package_dependencies/
 	$(COPY) -r $(GO_SPACE)/packaging $(GO_SPACE)/bin/package_dependencies/
-
-	$(COPY) -r $(GO_SPACE)/seelog_unix.xml $(GO_SPACE)/bin/package_dependencies/
-	$(COPY) -r $(GO_SPACE)/seelog_windows.xml.template $(GO_SPACE)/bin/package_dependencies/
 
 	$(COPY) -r $(GO_SPACE)/RELEASENOTES.md $(GO_SPACE)/bin/package_dependencies/
 	$(COPY) -r $(GO_SPACE)/LICENSE $(GO_SPACE)/bin/package_dependencies/

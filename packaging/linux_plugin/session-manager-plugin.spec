@@ -15,7 +15,6 @@ This package provides Amazon SSM SessionManager for managing shell experience us
 
 %files
 %defattr(-,root,root,-)
-/usr/local/sessionmanagerplugin/seelog.xml.template
 /usr/local/sessionmanagerplugin/bin/session-manager-plugin
 /var/lib/amazon/sessionmanagerplugin/
 /usr/local/sessionmanagerplugin/LICENSE

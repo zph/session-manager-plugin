@@ -22,7 +22,6 @@ mkdir -p ${GO_SPACE}/bin/linux_386/linux/var/lib/amazon/ssmcli/
 echo "Copying application files"
 
 cp ${GO_SPACE}/bin/linux_386/ssmcli ${GO_SPACE}/bin/linux_386/linux/usr/bin/
-cp ${GO_SPACE}/seelog_unix.xml ${GO_SPACE}/bin/linux_386/linux/etc/amazon/ssmcli/seelog.xml.template
 cp ${GO_SPACE}/packaging/linux/ssmcli.conf ${GO_SPACE}/bin/linux_386/linux/etc/init/
 cp ${GO_SPACE}/packaging/linux/ssmcli.service ${GO_SPACE}/bin/linux_386/linux/etc/systemd/system/
 cd ${GO_SPACE}/bin/linux_386/linux/usr/bin/; strip --strip-unneeded ssmcli; cd ~-

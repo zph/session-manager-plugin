@@ -61,7 +61,7 @@ func TestSetSessionHandlers(t *testing.T) {
 	}()
 
 	go func() {
-		acceptConnection = func(log log.T, listener net.Listener) (tcpConn net.Conn, err error) {
+		_ = func(log log.T, listener net.Listener) (tcpConn net.Conn, err error) {
 			return in, nil
 		}
 		signal.Notify(signalCh, syscall.SIGINT, syscall.SIGQUIT, syscall.SIGTSTP)
@@ -77,7 +77,7 @@ func TestSetSessionHandlers(t *testing.T) {
 }
 
 func TestStartSessionTCPLocalPortFromDocument(t *testing.T) {
-	acceptConnection = func(log log.T, listener net.Listener) (tcpConn net.Conn, err error) {
+	_ = func(log log.T, listener net.Listener) (tcpConn net.Conn, err error) {
 		return nil, errors.New("accept failed")
 	}
 	portSession := PortSession{
@@ -94,7 +94,7 @@ func TestStartSessionTCPLocalPortFromDocument(t *testing.T) {
 
 func TestStartSessionTCPAcceptFailed(t *testing.T) {
 	connErr := errors.New("accept failed")
-	acceptConnection = func(log log.T, listener net.Listener) (tcpConn net.Conn, err error) {
+	_ = func(log log.T, listener net.Listener) (tcpConn net.Conn, err error) {
 		return nil, connErr
 	}
 	portSession := PortSession{
@@ -110,7 +110,7 @@ func TestStartSessionTCPAcceptFailed(t *testing.T) {
 
 func TestStartSessionTCPConnectFailed(t *testing.T) {
 	listenerError := errors.New("TCP connection failed")
-	getNewListener = func(listenerType string, listenerAddress string) (listener net.Listener, err error) {
+	_ = func(listenerType string, listenerAddress string) (listener net.Listener, err error) {
 		return nil, listenerError
 	}
 	portSession := PortSession{

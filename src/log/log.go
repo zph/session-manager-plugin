@@ -64,16 +64,14 @@ type T interface {
 // -------------------------------------------------------------------
 
 const (
-	LogFileExtension     = ".log"
-	SeelogConfigFileName = "seelog.xml" // Kept for backward compatibility
-	ErrorLogFileSuffix   = "errors"
+	LogFileExtension   = ".log"
+	ErrorLogFileSuffix = "errors"
 )
 
 var (
-	DefaultSeelogConfigFilePath string
-	DefaultLogDir               string
-	ApplicationLogFile          string
-	ErrorLogFile                string
+	DefaultLogDir      string
+	ApplicationLogFile string
+	ErrorLogFile       string
 
 	loadedLogger *T
 	lock         sync.RWMutex

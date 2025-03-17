@@ -1,6 +1,8 @@
 module github.com/aws/session-manager-plugin
 
-go 1.23.5
+go 1.24
+
+toolchain go1.24.0
 
 require (
 	github.com/aws/aws-sdk-go v1.55.6
@@ -11,8 +13,8 @@ require (
 	github.com/stretchr/testify v1.10.0
 	github.com/xtaci/smux v1.5.33
 	golang.org/x/crypto v0.32.0
-	golang.org/x/sync v0.10.0
-	golang.org/x/sys v0.29.0
+	golang.org/x/sync v0.11.0
+	golang.org/x/sys v0.30.0
 )
 
 require (
@@ -25,3 +27,6 @@ require (
 	golang.org/x/term v0.28.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
+
+// TODO(zph): Remove this once the PR is merged
+replace github.com/aws/session-manager-plugin => github.com/zph/session-manager-plugin v0.0.0-20250224205035-af1c585d288e

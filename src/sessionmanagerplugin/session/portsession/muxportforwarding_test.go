@@ -32,12 +32,37 @@ func TestReadStream(t *testing.T) {
 
 	session := getSessionMock()
 
+	// Create mock net.Listener
+	type MockNetListener struct {
+		mock.Mock
+	}
+
+	func (m *MockNetListener) Accept() (net.Conn, error) {
+		args := m.Called()
+		return args.Get(0).(net.Conn), args.Error(1)
+	}
+
+	func (m *MockNetListener) Close() error {
+		args := m.Called()
+		return args.Error(0)
+	}
+
+	func (m *MockNetListener) Addr() net.Addr {
+		args := m.Called()
+		return args.Get(0).(net.Addr)
+	}
+
+	mockListener := &MockNetListener{}
+	mockListener.On("Accept").Return(nil, nil)
+	mockListener.On("Close").Return(nil)
+	mockListener.On("Addr").Return(&net.TCPAddr{IP: net.IPv4(127, 0, 0, 1), Port: 68080})
+
 	portSession := PortSession{
 		Session: session,
 		portSessionType: &MuxPortForwarding{
 			session:   session,
-			muxClient: &MuxClient{in, nil},
-			mgsConn:   &MgsConn{nil, out},
+			muxClient: &MuxClient{in, mockListener, nil},
+			mgsConn:   &MgsConn{mockListener, out},
 		},
 	}
 	go func() {
