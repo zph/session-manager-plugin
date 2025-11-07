@@ -16,10 +16,11 @@ package log
 
 import (
 	"fmt"
+	"os"
+	"strings"
 	"sync"
 
 	"github.com/rs/zerolog"
-	"github.com/rs/zerolog/log"
 )
 
 // -------------------------------------------------------------------
@@ -371,9 +372,24 @@ func getCached() T {
 
 // getPreConfiguredZerolog is where you'd call code from a package that
 // has already set up a global or returns a fully configured zerolog.Logger.
+// It defaults to Warn level and outputs to stderr.
+// The log level can be configured via the LOG_LEVEL environment variable.
+// Valid values: trace, debug, info, warn, error, fatal, panic
 func getPreConfiguredZerolog() zerolog.Logger {
-	// For demonstration, we just create a default logger.
-	// In reality, you'd do something like:
-	//     return externalpkg.GetGlobalLogger()
-	return log.Logger
+	// Set default log level to warn
+	level := zerolog.WarnLevel
+
+	// Check for LOG_LEVEL environment variable
+	if envLevel := os.Getenv("LOG_LEVEL"); envLevel != "" {
+		parsedLevel, err := zerolog.ParseLevel(strings.ToLower(envLevel))
+		if err == nil {
+			level = parsedLevel
+		}
+	}
+
+	// Configure logger to write to stderr with the specified level
+	zerolog.SetGlobalLevel(level)
+	logger := zerolog.New(os.Stderr).With().Timestamp().Logger()
+
+	return logger
 }
