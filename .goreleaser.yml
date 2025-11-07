@@ -63,7 +63,7 @@ builds:
 
 archives:
   - id: plugin-archives
-    builds:
+    ids:
       - session-manager-plugin
     name_template: >-
       {{ .ProjectName }}_
@@ -75,7 +75,8 @@ archives:
       {{- if .Arm }}v{{ .Arm }}{{ end }}
     format_overrides:
       - goos: windows
-        format: zip
+        formats:
+          - zip
     files:
       - LICENSE
       - NOTICE
@@ -85,7 +86,7 @@ archives:
       - VERSION
 
   - id: ssmcli-archives
-    builds:
+    ids:
       - ssmcli
     name_template: >-
       ssmcli_
@@ -96,7 +97,8 @@ archives:
       {{- else }}{{ .Arch }}{{ end }}
     format_overrides:
       - goos: windows
-        format: zip
+        formats:
+          - zip
     files:
       - LICENSE
       - NOTICE
@@ -108,7 +110,7 @@ nfpms:
   # DEB packages
   - id: plugin-deb
     package_name: session-manager-plugin
-    builds:
+    ids:
       - session-manager-plugin
     vendor: Amazon
     homepage: https://github.com/aws/session-manager-plugin
@@ -139,7 +141,7 @@ nfpms:
   # RPM packages
   - id: plugin-rpm
     package_name: session-manager-plugin
-    builds:
+    ids:
       - session-manager-plugin
     vendor: Amazon
     homepage: https://github.com/aws/session-manager-plugin
@@ -169,6 +171,51 @@ nfpms:
 
 checksum:
   name_template: "checksums.txt"
+
+homebrew_casks:
+  - name: session-manager-plugin
+    repository:
+      owner: zph
+      name: session-manager-plugin
+    commit_author:
+      name: goreleaserbot
+      email: bot@goreleaser.com
+    directory: Casks
+    homepage: https://github.com/zph/session-manager-plugin
+    description: Session Manager Plugin for the AWS CLI
+    license: Apache-2.0
+    url:
+      verified: github.com/zph/session-manager-plugin
+    ids:
+      - plugin-archives
+    hooks:
+      post:
+        install: |
+          if OS.mac?
+            system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/session-manager-plugin"]
+          end
+
+  - name: ssmcli
+    repository:
+      owner: zph
+      name: session-manager-plugin
+    commit_author:
+      name: goreleaserbot
+      email: bot@goreleaser.com
+    directory: Casks
+    homepage: https://github.com/zph/session-manager-plugin
+    description: SSM CLI tool for AWS Session Manager
+    license: Apache-2.0
+    url:
+      verified: github.com/zph/session-manager-plugin
+    ids:
+      - ssmcli-archives
+    hooks:
+      post:
+        install: |
+          if OS.mac?
+            system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/ssmcli"]
+          end
 
 snapshot:
   version_template: "{{ incpatch .Version }}-next"
