@@ -1,65 +1,193 @@
-# This is an example .goreleaser.yml file with some sensible defaults.
-# Make sure to check the documentation at https://goreleaser.com
 version: 2
+
 before:
   hooks:
+    - go mod download
     - go run ./src/version/versiongenerator/version-gen.go
-    - goimports -w ./src
-    - gofmt -w ./src
-    - go vet ./src/...
-    # You may remove this if you don't use go modules.
-    - go mod tidy
 
 builds:
-  - env:
+  # Session Manager Plugin
+  - id: session-manager-plugin
+    main: ./src/sessionmanagerplugin-main/main.go
+    binary: session-manager-plugin
+    env:
       - CGO_ENABLED=0
     goos:
       - linux
       - darwin
-      # Disabled because of existing compilation failures
-      # - windows
+      - windows
     goarch:
       - amd64
+      - "386"
+      - arm
       - arm64
-    # Added ldflags configuration
+    goarm:
+      - "6"
+    ignore:
+      - goos: darwin
+        goarch: "386"
+      - goos: darwin
+        goarch: arm
+      - goos: windows
+        goarch: arm
+      - goos: windows
+        goarch: arm64
     ldflags:
       - -s -w
-    # Binary naming template
-    binary: "{{ .ProjectName }}"
-    # Main package path
-    main: ./src/sessionmanagerplugin-main/main.go
+    flags:
+      - -trimpath
+
+  # SSM CLI
+  - id: ssmcli
+    main: ./src/ssmcli-main/main.go
+    binary: ssmcli
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - "386"
+      - arm64
+    ignore:
+      - goos: darwin
+        goarch: "386"
+      - goos: windows
+        goarch: arm64
+    ldflags:
+      - -s -w
+    flags:
+      - -trimpath
 
 archives:
-  - format: tar.gz
-    # this name template makes the OS and Arch compatible with the results of `uname`.
+  - id: plugin-archives
+    builds:
+      - session-manager-plugin
     name_template: >-
       {{ .ProjectName }}_
-      {{- title .Os }}_
+      {{- .Version }}_
+      {{- .Os }}_
       {{- if eq .Arch "amd64" }}x86_64
       {{- else if eq .Arch "386" }}i386
       {{- else }}{{ .Arch }}{{ end }}
-    files:
-      - LICENSE
-      - NOTICE
-      - THIRD-PARTY
-      - RELEASENOTES.md
-      - README.md
-    # use zip for windows archives
+      {{- if .Arm }}v{{ .Arm }}{{ end }}
     format_overrides:
       - goos: windows
         format: zip
+    files:
+      - LICENSE
+      - NOTICE
+      - README.md
+      - RELEASENOTES.md
+      - THIRD-PARTY
+      - VERSION
+
+  - id: ssmcli-archives
+    builds:
+      - ssmcli
+    name_template: >-
+      ssmcli_
+      {{- .Version }}_
+      {{- .Os }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else if eq .Arch "386" }}i386
+      {{- else }}{{ .Arch }}{{ end }}
+    format_overrides:
+      - goos: windows
+        format: zip
+    files:
+      - LICENSE
+      - NOTICE
+      - README.md
+      - RELEASENOTES.md
+      - THIRD-PARTY
+
+nfpms:
+  # DEB packages
+  - id: plugin-deb
+    package_name: session-manager-plugin
+    builds:
+      - session-manager-plugin
+    vendor: Amazon
+    homepage: https://github.com/aws/session-manager-plugin
+    maintainer: AWS Systems Manager <aws-ssm-feedback@amazon.com>
+    description: Session Manager Plugin for the AWS CLI
+    license: Apache-2.0
+    formats:
+      - deb
+    bindir: /usr/local/sessionmanagerplugin/bin
+    contents:
+      - src: packaging/ubuntu_plugin/session-manager-plugin.conf
+        dst: /etc/init/session-manager-plugin.conf
+      - src: packaging/ubuntu_plugin/session-manager-plugin.service
+        dst: /lib/systemd/system/session-manager-plugin.service
+      - src: LICENSE
+        dst: /usr/local/sessionmanagerplugin/LICENSE
+      - src: NOTICE
+        dst: /usr/local/sessionmanagerplugin/NOTICE
+      - src: README.md
+        dst: /usr/local/sessionmanagerplugin/README.md
+      - src: RELEASENOTES.md
+        dst: /usr/local/sessionmanagerplugin/RELEASENOTES.md
+      - src: THIRD-PARTY
+        dst: /usr/local/sessionmanagerplugin/THIRD-PARTY
+      - src: VERSION
+        dst: /usr/local/sessionmanagerplugin/VERSION
+
+  # RPM packages
+  - id: plugin-rpm
+    package_name: session-manager-plugin
+    builds:
+      - session-manager-plugin
+    vendor: Amazon
+    homepage: https://github.com/aws/session-manager-plugin
+    maintainer: AWS Systems Manager <aws-ssm-feedback@amazon.com>
+    description: Session Manager Plugin for the AWS CLI
+    license: Apache-2.0
+    formats:
+      - rpm
+    bindir: /usr/local/sessionmanagerplugin/bin
+    contents:
+      - src: packaging/linux_plugin/session-manager-plugin.conf
+        dst: /etc/init/session-manager-plugin.conf
+      - src: packaging/linux_plugin/session-manager-plugin.service
+        dst: /usr/lib/systemd/system/session-manager-plugin.service
+      - src: LICENSE
+        dst: /usr/local/sessionmanagerplugin/LICENSE
+      - src: NOTICE
+        dst: /usr/local/sessionmanagerplugin/NOTICE
+      - src: README.md
+        dst: /usr/local/sessionmanagerplugin/README.md
+      - src: RELEASENOTES.md
+        dst: /usr/local/sessionmanagerplugin/RELEASENOTES.md
+      - src: THIRD-PARTY
+        dst: /usr/local/sessionmanagerplugin/THIRD-PARTY
+      - src: VERSION
+        dst: /usr/local/sessionmanagerplugin/VERSION
+
+checksum:
+  name_template: "checksums.txt"
+
+snapshot:
+  version_template: "{{ incpatch .Version }}-next"
 
 changelog:
   sort: asc
   filters:
     exclude:
-      - '^docs:'
-      - '^test:'
-      - '^ci:'
-      - '^chore:'
+      - "^docs:"
+      - "^test:"
+      - "^chore:"
+      - Merge pull request
+      - Merge branch
 
-# Uncomment the following lines if you want to publish to GitHub
-# release:
-#   github:
-#     owner: zph
-#     name: session-manager-plugin
+release:
+  draft: false
+  prerelease: auto
+  mode: replace
+  footer: |
+    ## Installation
+
+    See [README.md](https://github.com/aws/session-manager-plugin/blob/master/README.md) for installation instructions.

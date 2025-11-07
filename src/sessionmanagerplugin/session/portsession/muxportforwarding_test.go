@@ -33,6 +33,9 @@ type MockNetListener struct {
 
 func (m *MockNetListener) Accept() (net.Conn, error) {
 	args := m.Called()
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
 	return args.Get(0).(net.Conn), args.Error(1)
 }
 
