@@ -260,6 +260,28 @@ homebrew_casks:
             system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/ssmcli"]
           end
 
+  - name: ssm-port-forward
+    repository:
+      owner: zph
+      name: session-manager-plugin
+    commit_author:
+      name: goreleaserbot
+      email: bot@goreleaser.com
+    directory: Casks
+    homepage: https://github.com/zph/session-manager-plugin
+    description: SSH-style port forwarding for AWS SSM sessions with multi-hop support
+    license: Apache-2.0
+    url:
+      verified: github.com/zph/session-manager-plugin
+    ids:
+      - ssm-port-forward-archives
+    hooks:
+      post:
+        install: |
+          if OS.mac?
+            system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/ssm-port-forward"]
+          end
+
 snapshot:
   version_template: "{{ incpatch .Version }}-next"
 
