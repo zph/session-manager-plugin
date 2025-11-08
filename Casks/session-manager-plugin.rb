@@ -3,7 +3,7 @@ cask "session-manager-plugin" do
   name "session-manager-plugin"
   desc "Session Manager Plugin for the AWS CLI"
   homepage "https://github.com/zph/session-manager-plugin"
-  version "0.0.0-1.2.694.5"
+  version "0.0.0-1.2.694.6"
 
   livecheck do
     skip "Auto-generated on release."
@@ -15,12 +15,12 @@ cask "session-manager-plugin" do
     on_intel do
       url "https://github.com/zph/session-manager-plugin/releases/download/v#{version}/session-manager-plugin_#{version}_darwin_x86_64.tar.gz",
         verified: "github.com/zph/session-manager-plugin"
-      sha256 "e5371e4d28d6191baf50fbd34544f3ad5c4dcf6e2f457da7b07f31982fa05043"
+      sha256 "e774bad7d876dfa64517acd12ca05cf5de88c1bedcf4846ca4c270e04eb1fcbd"
     end
     on_arm do
       url "https://github.com/zph/session-manager-plugin/releases/download/v#{version}/session-manager-plugin_#{version}_darwin_arm64.tar.gz",
         verified: "github.com/zph/session-manager-plugin"
-      sha256 "2a8df62c87a08cee1957c33c2198168037227b91fe7a6ba79d1f0d5be813cb3e"
+      sha256 "8123ac396341759b579d6c0778f4f9899c909aa7a149d4fdbea885b01d7c4192"
     end
   end
 
@@ -28,12 +28,12 @@ cask "session-manager-plugin" do
     on_intel do
       url "https://github.com/zph/session-manager-plugin/releases/download/v#{version}/session-manager-plugin_#{version}_linux_x86_64.tar.gz",
         verified: "github.com/zph/session-manager-plugin"
-      sha256 "aa38ff2ebee2a3ef6826984fb924f557f4ab0455d79dad140ea135a97ce79664"
+      sha256 "b6b08784970e97123f802d9a318f2059ab9c45523f2c93403dc3d75a5516bf8d"
     end
     on_arm do
       url "https://github.com/zph/session-manager-plugin/releases/download/v#{version}/session-manager-plugin_#{version}_linux_arm64.tar.gz",
         verified: "github.com/zph/session-manager-plugin"
-      sha256 "97294cc0dfe20864c9c99d55f1137883158b9b15425572a35b236f04e6c14938"
+      sha256 "a2f68aab8f08cbad28ec387d4b82b330ebfca4382695853cbb116ad7d43e61b6"
     end
   end
 
