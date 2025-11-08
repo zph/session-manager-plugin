@@ -44,6 +44,27 @@ test-verbose: ## Run tests with verbose output
 	$(GO) clean -testcache
 	$(GO) test -v -cover -gcflags "-N -l" ./src/... -test.paniconexit0=false
 
+.PHONY: test-race
+test-race: ## Run tests with race detector
+	$(GO) clean -testcache
+	$(GO) test -race ./src/...
+
+.PHONY: test-bench
+test-bench: ## Run benchmarks and show test durations
+	$(GO) test -v -bench=. -benchmem -run=^$$ ./src/... || true
+	@echo "\n=== Test Performance ==="
+	$(GO) test -v ./src/... 2>&1 | grep -E "^(--- PASS:|--- FAIL:|ok\s+|FAIL\s+)" | grep -v "coverage:"
+
+.PHONY: test-short
+test-short: ## Run only fast unit tests (skip slow integration tests)
+	$(GO) clean -testcache
+	$(GO) test -short -cover ./src/...
+
+.PHONY: test-integration
+test-integration: ## Run only slow integration tests
+	$(GO) clean -testcache
+	$(GO) test -tags=integration -cover ./src/...
+
 .PHONY: clean
 clean: ## Clean build artifacts
 	rm -rf build/ bin/ dist/ pkg/ vendor/bin/ vendor/pkg/ .cover/

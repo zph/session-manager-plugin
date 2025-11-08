@@ -1,4 +1,6 @@
-// Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+//go:build integration
+
+// Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License"). You may not
 // use this file except in compliance with the License. A copy of the
@@ -15,7 +17,7 @@
 package portsession
 
 import (
-	"os"
+	"net"
 	"testing"
 	"time"
 
@@ -25,12 +27,30 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// Test StartSession
-func TestStartSessionForStandardStreamForwarding(t *testing.T) {
-	in, out, _ := os.Pipe()
-	out.Write(outputMessage.Payload)
-	oldStdin := os.Stdin
-	os.Stdin = in
+// test readStream
+func TestReadStream(t *testing.T) {
+	out, in := net.Pipe()
+	defer out.Close()
+
+	session := getSessionMock()
+
+	mockListener := &MockNetListener{}
+	mockListener.On("Accept").Return(nil, nil)
+	mockListener.On("Close").Return(nil)
+	mockListener.On("Addr").Return(&net.TCPAddr{IP: net.IPv4(127, 0, 0, 1), Port: 68080})
+
+	portSession := PortSession{
+		Session: session,
+		portSessionType: &MuxPortForwarding{
+			session:   session,
+			muxClient: &MuxClient{in, mockListener, nil},
+			mgsConn:   &MgsConn{mockListener, out},
+		},
+	}
+	go func() {
+		in.Write(outputMessage.Payload)
+		in.Close()
+	}()
 
 	var actualPayload []byte
 	datachannel.SendMessageCall = func(log log.T, dataChannel *datachannel.DataChannel, input []byte, inputType int) error {
@@ -38,24 +58,14 @@ func TestStartSessionForStandardStreamForwarding(t *testing.T) {
 		return nil
 	}
 
-	// Spawning a separate go routine to close files after a few seconds.
-	// This is required as startSession has a for loop which will continuously reads data.
 	go func() {
-		time.Sleep(time.Second)
-		os.Stdin = oldStdin
-		in.Close()
-		out.Close()
+		portSession.portSessionType.ReadStream(mockLog)
 	}()
 
-	portSession := PortSession{
-		Session:        getSessionMock(),
-		portParameters: PortParameters{PortNumber: "22"},
-		portSessionType: &StandardStreamForwarding{
-			session:        getSessionMock(),
-			portParameters: PortParameters{PortNumber: "22"},
-		},
+	select {
+	case <-time.After(time.Second):
 	}
-	portSession.SetSessionHandlers(mockLog)
+
 	deserializedMsg := &message.ClientMessage{}
 	err := deserializedMsg.DeserializeClientMessage(mockLog, actualPayload)
 	assert.Nil(t, err)

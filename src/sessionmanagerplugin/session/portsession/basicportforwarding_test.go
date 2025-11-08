@@ -16,65 +16,10 @@ package portsession
 
 import (
 	"errors"
-	"net"
-	"os"
-	"os/signal"
-	"syscall"
 	"testing"
-	"time"
 
-	"github.com/aws/session-manager-plugin/src/log"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 )
-
-// This test passes ctrl+c signal which blocks running of all other tests.
-func TestSetSessionHandlers(t *testing.T) {
-	mockLog.Infof("TestStartSession!!!!!")
-	out, in := net.Pipe()
-	defer out.Close()
-	defer in.Close()
-
-	counter := 0
-	countTimes := func() error {
-		counter++
-		return nil
-	}
-	mockWebSocketChannel.On("SendMessage", mockLog, mock.Anything, mock.Anything).
-		Return(countTimes())
-
-	mockSession := getSessionMock()
-	portSession := PortSession{
-		Session:        mockSession,
-		portParameters: PortParameters{PortNumber: "22", Type: "LocalPortForwarding"},
-		portSessionType: &BasicPortForwarding{
-			session:        mockSession,
-			portParameters: PortParameters{PortNumber: "22", Type: "LocalPortForwarding"},
-		},
-	}
-	signalCh := make(chan os.Signal, 1)
-	go func() {
-		time.Sleep(100 * time.Millisecond)
-		if _, err := out.Write([]byte("testing123")); err != nil {
-			mockLog.Infof("error: ", err)
-		}
-	}()
-
-	go func() {
-		_ = func(log log.T, listener net.Listener) (tcpConn net.Conn, err error) {
-			return in, nil
-		}
-		signal.Notify(signalCh, syscall.SIGINT, syscall.SIGQUIT, syscall.SIGTSTP)
-		process, _ := os.FindProcess(os.Getpid())
-		process.Signal(syscall.SIGINT)
-		portSession.SetSessionHandlers(mockLog)
-	}()
-
-	time.Sleep(time.Second)
-	assert.Equal(t, <-signalCh, syscall.SIGINT)
-	assert.Equal(t, counter, 1)
-	mockWebSocketChannel.AssertExpectations(t)
-}
 
 func TestStartSessionTCPLocalPortFromDocument(t *testing.T) {
 	portSession := PortSession{

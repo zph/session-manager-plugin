@@ -17,11 +17,7 @@ package portsession
 import (
 	"net"
 	"testing"
-	"time"
 
-	"github.com/aws/session-manager-plugin/src/datachannel"
-	"github.com/aws/session-manager-plugin/src/log"
-	"github.com/aws/session-manager-plugin/src/message"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -47,51 +43,6 @@ func (m *MockNetListener) Close() error {
 func (m *MockNetListener) Addr() net.Addr {
 	args := m.Called()
 	return args.Get(0).(net.Addr)
-}
-
-// test readStream
-func TestReadStream(t *testing.T) {
-	out, in := net.Pipe()
-	defer out.Close()
-
-	session := getSessionMock()
-
-	mockListener := &MockNetListener{}
-	mockListener.On("Accept").Return(nil, nil)
-	mockListener.On("Close").Return(nil)
-	mockListener.On("Addr").Return(&net.TCPAddr{IP: net.IPv4(127, 0, 0, 1), Port: 68080})
-
-	portSession := PortSession{
-		Session: session,
-		portSessionType: &MuxPortForwarding{
-			session:   session,
-			muxClient: &MuxClient{in, mockListener, nil},
-			mgsConn:   &MgsConn{mockListener, out},
-		},
-	}
-	go func() {
-		in.Write(outputMessage.Payload)
-		in.Close()
-	}()
-
-	var actualPayload []byte
-	datachannel.SendMessageCall = func(log log.T, dataChannel *datachannel.DataChannel, input []byte, inputType int) error {
-		actualPayload = input
-		return nil
-	}
-
-	go func() {
-		portSession.portSessionType.ReadStream(mockLog)
-	}()
-
-	select {
-	case <-time.After(time.Second):
-	}
-
-	deserializedMsg := &message.ClientMessage{}
-	err := deserializedMsg.DeserializeClientMessage(mockLog, actualPayload)
-	assert.Nil(t, err)
-	assert.Equal(t, outputMessage.Payload, deserializedMsg.Payload)
 }
 
 // test writeStream
@@ -125,6 +76,11 @@ func TestHandleDataTransferSrcToDst(t *testing.T) {
 	out1, in1 := net.Pipe()
 
 	defer out1.Close()
+	defer in.Close()
+	defer out.Close()
+	defer in1.Close()
+
+	done := make(chan bool)
 	go func() {
 		in.Write(outputMessage.Payload)
 		in.Close()
@@ -132,9 +88,11 @@ func TestHandleDataTransferSrcToDst(t *testing.T) {
 	go func() {
 		n, _ := out1.Read(msg)
 		msg = msg[:n]
+		done <- true
 	}()
 
 	handleDataTransfer(in1, out)
+	<-done // Wait for read goroutine to complete
 	assert.EqualValues(t, outputMessage.Payload, msg)
 }
 
@@ -144,6 +102,11 @@ func TestHandleDataTransferDstToSrc(t *testing.T) {
 	out1, in1 := net.Pipe()
 
 	defer out.Close()
+	defer in.Close()
+	defer out1.Close()
+	defer in1.Close()
+
+	done := make(chan bool)
 	go func() {
 		in1.Write(outputMessage.Payload)
 		in1.Close()
@@ -151,8 +114,10 @@ func TestHandleDataTransferDstToSrc(t *testing.T) {
 	go func() {
 		n, _ := out.Read(msg)
 		msg = msg[:n]
+		done <- true
 	}()
 
 	handleDataTransfer(in, out1)
+	<-done // Wait for read goroutine to complete
 	assert.EqualValues(t, outputMessage.Payload, msg)
 }

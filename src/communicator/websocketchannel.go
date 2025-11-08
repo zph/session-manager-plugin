@@ -17,6 +17,7 @@ package communicator
 import (
 	"errors"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/aws/session-manager-plugin/src/config"
@@ -45,10 +46,26 @@ type WebSocketChannel struct {
 	Url          string
 	OnMessage    func([]byte)
 	OnError      func(error)
-	IsOpen       bool
+	isOpen       int32 // atomic: 0=false, 1=true
 	writeLock    *sync.Mutex
 	Connection   *websocket.Conn
 	ChannelToken string
+}
+
+// IsOpen returns true if the websocket connection is open.
+// This method is safe for concurrent access.
+func (webSocketChannel *WebSocketChannel) IsOpen() bool {
+	return atomic.LoadInt32(&webSocketChannel.isOpen) == 1
+}
+
+// setOpen sets the open state of the websocket connection.
+// This method is safe for concurrent access.
+func (webSocketChannel *WebSocketChannel) setOpen(open bool) {
+	var val int32
+	if open {
+		val = 1
+	}
+	atomic.StoreInt32(&webSocketChannel.isOpen, val)
 }
 
 // GetChannelToken gets the channel token
@@ -87,7 +104,7 @@ func (webSocketChannel *WebSocketChannel) StartPings(log log.T, pingInterval tim
 
 	go func() {
 		for {
-			if webSocketChannel.IsOpen == false {
+			if !webSocketChannel.IsOpen() {
 				return
 			}
 
@@ -107,7 +124,7 @@ func (webSocketChannel *WebSocketChannel) StartPings(log log.T, pingInterval tim
 // SendMessage sends a byte message through the websocket connection.
 // Examples of message type are websocket.TextMessage or websocket.Binary
 func (webSocketChannel *WebSocketChannel) SendMessage(log log.T, input []byte, inputType int) error {
-	if webSocketChannel.IsOpen == false {
+	if !webSocketChannel.IsOpen() {
 		return errors.New("Can't send message: Connection is closed.")
 	}
 
@@ -125,9 +142,9 @@ func (webSocketChannel *WebSocketChannel) SendMessage(log log.T, input []byte, i
 func (webSocketChannel *WebSocketChannel) Close(log log.T) error {
 
 	log.Info("Closing websocket channel connection to: " + webSocketChannel.Url)
-	if webSocketChannel.IsOpen == true {
+	if webSocketChannel.IsOpen() {
 		// Send signal to stop receiving message
-		webSocketChannel.IsOpen = false
+		webSocketChannel.setOpen(false)
 		return websocketutil.NewWebsocketUtil(log, nil).CloseConnection(webSocketChannel.Connection)
 	}
 
@@ -145,7 +162,7 @@ func (webSocketChannel *WebSocketChannel) Open(log log.T) error {
 		return err
 	}
 	webSocketChannel.Connection = ws
-	webSocketChannel.IsOpen = true
+	webSocketChannel.setOpen(true)
 	webSocketChannel.StartPings(log, config.PingTimeInterval)
 
 	// spin up a different routine to listen to the incoming traffic
@@ -158,7 +175,7 @@ func (webSocketChannel *WebSocketChannel) Open(log log.T) error {
 
 		retryCount := 0
 		for {
-			if webSocketChannel.IsOpen == false {
+			if !webSocketChannel.IsOpen() {
 				log.Debugf("Ending the channel listening routine since the channel is closed: %s",
 					webSocketChannel.Url)
 				break

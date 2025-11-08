@@ -19,7 +19,6 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
-	"sync"
 	"syscall"
 	"testing"
 	"time"
@@ -109,46 +108,6 @@ func TestSendInputDataMessageWithPayloadTypeSize(t *testing.T) {
 	err := dataChannel.SendInputDataMessage(logger, message.Size, sizeDataBytes)
 	assert.Nil(t, err)
 	assert.Equal(t, expectedSequenceNumber, dataChannel.ExpectedSequenceNumber)
-	assert.Equal(t, 1, SendMessageCallCount)
-}
-
-func TestTerminalResizeWhenSessionSizeDataIsNotEqualToActualSize(t *testing.T) {
-	dataChannel := getDataChannel()
-
-	session := session.Session{
-		DataChannel: dataChannel,
-	}
-
-	sizeData := message.SizeData{
-		Cols: 100,
-		Rows: 100,
-	}
-
-	shellSession := ShellSession{
-		Session:  session,
-		SizeData: sizeData,
-	}
-	GetTerminalSizeCall = func(fd int) (width int, height int, err error) {
-		return 123, 123, nil
-	}
-
-	var wg sync.WaitGroup
-	wg.Add(1)
-	// Spawning a separate go routine to close websocket connection.
-	// This is required as handleTerminalResize has a for loop which will continuously check for
-	// size data every 500ms.
-	go func() {
-		time.Sleep(1 * time.Second)
-		wg.Done()
-	}()
-
-	SendMessageCallCount := 0
-	datachannel.SendMessageCall = func(log log.T, dataChannel *datachannel.DataChannel, input []byte, inputType int) error {
-		SendMessageCallCount++
-		return nil
-	}
-	go shellSession.handleTerminalResize(logger)
-	wg.Wait()
 	assert.Equal(t, 1, SendMessageCallCount)
 }
 

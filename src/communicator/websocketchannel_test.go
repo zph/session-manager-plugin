@@ -161,11 +161,11 @@ func TestOpenCloseWebSocketChannel(t *testing.T) {
 	err := websocketchannel.Open(log)
 	assert.Nil(t, err, "Error opening the websocket connection.")
 	assert.NotNil(t, websocketchannel.Connection, "Open connection failed.")
-	assert.True(t, websocketchannel.IsOpen, "IsOpen is not set to true.")
+	assert.True(t, websocketchannel.IsOpen(), "IsOpen is not set to true.")
 
 	err = websocketchannel.Close(log)
 	assert.Nil(t, err, "Error closing the websocket connection.")
-	assert.False(t, websocketchannel.IsOpen, "IsOpen is not set to false.")
+	assert.False(t, websocketchannel.IsOpen(), "IsOpen is not set to false.")
 	t.Log("Ending test: TestOpenCloseWebSocketChannel")
 }
 
@@ -202,7 +202,7 @@ func TestReadWriteTextToWebSocketChannel(t *testing.T) {
 
 	err = websocketchannel.Close(log)
 	assert.Nil(t, err, "Error closing the websocket connection.")
-	assert.False(t, websocketchannel.IsOpen, "IsOpen is not set to false.")
+	assert.False(t, websocketchannel.IsOpen(), "IsOpen is not set to false.")
 	t.Log("Ending test: TestReadWriteWebSocketChannel ")
 }
 
@@ -239,7 +239,7 @@ func TestReadWriteBinaryToWebSocketChannel(t *testing.T) {
 
 	err = websocketchannel.Close(log)
 	assert.Nil(t, err, "Error closing the websocket connection.")
-	assert.False(t, websocketchannel.IsOpen, "IsOpen is not set to false.")
+	assert.False(t, websocketchannel.IsOpen(), "IsOpen is not set to false.")
 	t.Log("Ending test: TestReadWriteWebSocketChannel ")
 }
 
@@ -282,7 +282,7 @@ func TestMultipleReadWriteWebSocketChannel(t *testing.T) {
 
 	err = websocketchannel.Close(log)
 	assert.Nil(t, err, "Error closing the websocket connection.")
-	assert.False(t, websocketchannel.IsOpen, "IsOpen is not set to false.")
+	assert.False(t, websocketchannel.IsOpen(), "IsOpen is not set to false.")
 
 	t.Log("Ending test: TestMultipleReadWriteWebSocketChannel")
 }

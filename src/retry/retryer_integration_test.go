@@ -1,3 +1,5 @@
+//go:build integration
+
 // Copyright 2018 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License"). You may not
@@ -13,3 +15,30 @@
 
 // retry implements back off retry strategy for reconnect web socket connection.
 package retry
+
+import (
+	"errors"
+	"math/rand"
+	"testing"
+
+	"github.com/aws/session-manager-plugin/src/config"
+	"github.com/stretchr/testify/assert"
+)
+
+var (
+	callableFunc = func() error {
+		return errors.New("Error occured in callable function")
+	}
+)
+
+func TestRepeatableExponentialRetryerRetriesForGivenNumberOfMaxRetries(t *testing.T) {
+	retryer := RepeatableExponentialRetryer{
+		callableFunc,
+		config.RetryBase,
+		rand.Intn(config.DataChannelRetryInitialDelayMillis) + config.DataChannelRetryInitialDelayMillis,
+		config.DataChannelRetryMaxIntervalMillis,
+		config.DataChannelNumMaxRetries,
+	}
+	err := retryer.Call()
+	assert.NotNil(t, err)
+}

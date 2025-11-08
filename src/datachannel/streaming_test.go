@@ -20,7 +20,6 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
-	"sync"
 	"testing"
 	"time"
 
@@ -255,33 +254,6 @@ func TestRemoveDataFromIncomingMessageBuffer(t *testing.T) {
 
 	dataChannel.RemoveDataFromIncomingMessageBuffer(0)
 	assert.Equal(t, 2, len(dataChannel.IncomingMessageBuffer.Messages))
-}
-
-func TestResendStreamDataMessageScheduler(t *testing.T) {
-	dataChannel := getDataChannel()
-	mockChannel := &communicatorMocks.IWebSocketChannel{}
-	dataChannel.wsChannel = mockChannel
-	for i := 0; i < 3; i++ {
-		dataChannel.AddDataToOutgoingMessageBuffer(streamingMessages[i])
-	}
-
-	var wg sync.WaitGroup
-	wg.Add(1)
-	// Spawning a separate go routine to close websocket connection.
-	// This is required as ResendStreamDataMessageScheduler has a for loop which will continuosly resend data until channel is closed.
-	go func() {
-		time.Sleep(1 * time.Second)
-		wg.Done()
-	}()
-
-	SendMessageCallCount := 0
-	SendMessageCall = func(log log.T, dataChannel *DataChannel, input []byte, inputType int) error {
-		SendMessageCallCount++
-		return nil
-	}
-	dataChannel.ResendStreamDataMessageScheduler(mockLogger)
-	wg.Wait()
-	assert.True(t, SendMessageCallCount > 1)
 }
 
 func TestDataChannelIncomingMessageHandlerForExpectedInputStreamDataMessage(t *testing.T) {

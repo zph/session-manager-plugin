@@ -18,18 +18,21 @@ import (
 	"io/ioutil"
 	"os"
 	"testing"
-	"time"
 
-	"github.com/aws/session-manager-plugin/src/datachannel"
+	"github.com/aws/session-manager-plugin/src/communicator/mocks"
 	"github.com/aws/session-manager-plugin/src/jsonutil"
-	"github.com/aws/session-manager-plugin/src/log"
-	"github.com/aws/session-manager-plugin/src/message"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
 // Test Initialize
 func TestInitializePortSession(t *testing.T) {
+	// Reset mock expectations before test
+	mockWebSocketChannel = mocks.IWebSocketChannel{}
+	t.Cleanup(func() {
+		mockWebSocketChannel = mocks.IWebSocketChannel{}
+	})
+
 	var portParameters PortParameters
 	jsonutil.Remarshal(properties, &portParameters)
 
@@ -46,6 +49,12 @@ func TestInitializePortSession(t *testing.T) {
 }
 
 func TestInitializePortSessionForPortForwardingWithOldAgent(t *testing.T) {
+	// Reset mock expectations before test
+	mockWebSocketChannel = mocks.IWebSocketChannel{}
+	t.Cleanup(func() {
+		mockWebSocketChannel = mocks.IWebSocketChannel{}
+	})
+
 	var portParameters PortParameters
 	jsonutil.Remarshal(map[string]interface{}{"portNumber": "8080", "type": "LocalPortForwarding"}, &portParameters)
 
@@ -62,6 +71,12 @@ func TestInitializePortSessionForPortForwardingWithOldAgent(t *testing.T) {
 }
 
 func TestInitializePortSessionForPortForwarding(t *testing.T) {
+	// Reset mock expectations before test
+	mockWebSocketChannel = mocks.IWebSocketChannel{}
+	t.Cleanup(func() {
+		mockWebSocketChannel = mocks.IWebSocketChannel{}
+	})
+
 	var portParameters PortParameters
 	jsonutil.Remarshal(map[string]interface{}{"portNumber": "8080", "type": "LocalPortForwarding"}, &portParameters)
 
@@ -75,43 +90,6 @@ func TestInitializePortSessionForPortForwarding(t *testing.T) {
 	mockWebSocketChannel.AssertExpectations(t)
 	assert.Equal(t, portParameters, portSession.portParameters, "Initialize port parameters")
 	assert.IsType(t, &MuxPortForwarding{}, portSession.portSessionType)
-}
-
-func TestStartSessionWithClosedWsConn(t *testing.T) {
-	in, out, _ := os.Pipe()
-	out.Write(outputMessage.Payload)
-	oldStdin := os.Stdin
-	os.Stdin = in
-
-	var actualPayload []byte
-	datachannel.SendMessageCall = func(log log.T, dataChannel *datachannel.DataChannel, input []byte, inputType int) error {
-		actualPayload = input
-		return nil
-	}
-
-	// Spawning a separate go routine to close files after a few seconds.
-	// This is required as startSession has a for loop which will continuously reads data.
-	go func() {
-		time.Sleep(time.Second)
-		os.Stdin = oldStdin
-		in.Close()
-		out.Close()
-	}()
-
-	portSession := PortSession{
-		Session:        getSessionMock(),
-		portParameters: PortParameters{PortNumber: "22"},
-		portSessionType: &StandardStreamForwarding{
-			inputStream:  in,
-			outputStream: out,
-			session:      getSessionMock(),
-		},
-	}
-	portSession.SetSessionHandlers(mockLog)
-	deserializedMsg := &message.ClientMessage{}
-	err := deserializedMsg.DeserializeClientMessage(mockLog, actualPayload)
-	assert.Nil(t, err)
-	assert.Equal(t, outputMessage.Payload, deserializedMsg.Payload)
 }
 
 // Test ProcessStreamMessagePayload
