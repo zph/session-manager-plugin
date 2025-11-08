@@ -24,7 +24,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/aws/session-manager-plugin/src/log"
+	"github.com/zph/session-manager-plugin/src/log"
 	"github.com/google/uuid"
 )
 

@@ -23,14 +23,14 @@ import (
 
 	sdkSession "github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ssm"
-	"github.com/aws/session-manager-plugin/src/datachannel"
-	"github.com/aws/session-manager-plugin/src/jsonutil"
-	"github.com/aws/session-manager-plugin/src/log"
-	"github.com/aws/session-manager-plugin/src/sdkutil"
-	"github.com/aws/session-manager-plugin/src/sessionmanagerplugin/session"
-	_ "github.com/aws/session-manager-plugin/src/sessionmanagerplugin/session/portsession"
-	_ "github.com/aws/session-manager-plugin/src/sessionmanagerplugin/session/shellsession"
-	"github.com/aws/session-manager-plugin/src/ssmclicommands/utils"
+	"github.com/zph/session-manager-plugin/src/datachannel"
+	"github.com/zph/session-manager-plugin/src/jsonutil"
+	"github.com/zph/session-manager-plugin/src/log"
+	"github.com/zph/session-manager-plugin/src/sdkutil"
+	"github.com/zph/session-manager-plugin/src/sessionmanagerplugin/session"
+	_ "github.com/zph/session-manager-plugin/src/sessionmanagerplugin/session/portsession"
+	_ "github.com/zph/session-manager-plugin/src/sessionmanagerplugin/session/shellsession"
+	"github.com/zph/session-manager-plugin/src/ssmclicommands/utils"
 	"github.com/google/uuid"
 )
 

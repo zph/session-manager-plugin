@@ -78,6 +78,7 @@ build: ## Build binaries for all platforms using goreleaser
 build-local: ## Build binary for current platform only
 	$(GO) build -ldflags "-s -w" -o bin/session-manager-plugin ./src/sessionmanagerplugin-main/main.go
 	$(GO) build -ldflags "-s -w" -o bin/ssmcli ./src/ssmcli-main/main.go
+	$(GO) build -ldflags "-s -w" -o bin/ssm-port-forward ./src/ssm-port-forward-main/main.go
 
 .PHONY: snapshot
 snapshot: checkstyle test ## Create a snapshot release (no git tag required)

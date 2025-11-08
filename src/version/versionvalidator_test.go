@@ -17,8 +17,8 @@ package version
 import (
 	"testing"
 
-	"github.com/aws/session-manager-plugin/src/config"
-	"github.com/aws/session-manager-plugin/src/log"
+	"github.com/zph/session-manager-plugin/src/config"
+	"github.com/zph/session-manager-plugin/src/log"
 	"github.com/stretchr/testify/assert"
 )
 

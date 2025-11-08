@@ -19,8 +19,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/aws/session-manager-plugin/src/communicator/mocks"
-	"github.com/aws/session-manager-plugin/src/jsonutil"
+	"github.com/zph/session-manager-plugin/src/communicator/mocks"
+	"github.com/zph/session-manager-plugin/src/jsonutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )

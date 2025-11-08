@@ -1,4 +1,4 @@
-module github.com/aws/session-manager-plugin
+module github.com/zph/session-manager-plugin
 
 go 1.24
 
@@ -27,6 +27,3 @@ require (
 	golang.org/x/term v0.28.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
-
-// TODO(zph): Remove this once the PR is merged
-replace github.com/aws/session-manager-plugin => github.com/zph/session-manager-plugin v0.0.0-20250224205035-af1c585d288e
