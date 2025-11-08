@@ -7,22 +7,12 @@ This directory contains Homebrew casks for installing the Session Manager Plugin
 ### Install directly from this repository
 
 ```bash
-# Session Manager Plugin
-brew install zph/session-manager-plugin/session-manager-plugin
-
-# SSM CLI
-brew install zph/session-manager-plugin/ssmcli
-```
-
-Or tap the repository first:
-
-```bash
 # Tap this repository
 brew tap zph/session-manager-plugin https://github.com/zph/session-manager-plugin
 
 # Then install
-brew install session-manager-plugin
-brew install ssmcli
+brew install zph/session-manager-plugin/session-manager-plugin
+brew install zph/session-manager-plugin/ssmcli
 ```
 
 ## How it works
