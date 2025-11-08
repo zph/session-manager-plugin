@@ -21,8 +21,8 @@ import (
 	"testing"
 	"time"
 
-	communicatorMocks "github.com/aws/session-manager-plugin/src/communicator/mocks"
-	"github.com/aws/session-manager-plugin/src/log"
+	communicatorMocks "github.com/zph/session-manager-plugin/src/communicator/mocks"
+	"github.com/zph/session-manager-plugin/src/log"
 	"github.com/stretchr/testify/assert"
 )
 

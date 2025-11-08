@@ -1,6 +1,6 @@
 # Homebrew Casks
 
-This directory contains Homebrew casks for installing the Session Manager Plugin and SSM CLI.
+This directory contains Homebrew casks for installing the Session Manager Plugin, SSM CLI, and SSM Port Forward.
 
 ## Installation
 
@@ -13,6 +13,7 @@ brew tap zph/session-manager-plugin https://github.com/zph/session-manager-plugi
 # Then install
 brew install zph/session-manager-plugin/session-manager-plugin
 brew install zph/session-manager-plugin/ssmcli
+brew install zph/session-manager-plugin/ssm-port-forward
 ```
 
 ## How it works

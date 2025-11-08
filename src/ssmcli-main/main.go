@@ -17,7 +17,7 @@ package main
 import (
 	"os"
 
-	"github.com/aws/session-manager-plugin/src/ssmclicommands"
+	"github.com/zph/session-manager-plugin/src/ssmclicommands"
 )
 
 // Created a ssmcli binary, used for testing purpose only.
