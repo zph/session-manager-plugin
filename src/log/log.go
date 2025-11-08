@@ -377,7 +377,7 @@ func getCached() T {
 // Valid values: trace, debug, info, warn, error, fatal, panic
 func getPreConfiguredZerolog() zerolog.Logger {
 	// Set default log level to warn
-	level := zerolog.WarnLevel
+	level := zerolog.FatalLevel
 
 	// Check for LOG_LEVEL environment variable
 	if envLevel := os.Getenv("LOG_LEVEL"); envLevel != "" {
