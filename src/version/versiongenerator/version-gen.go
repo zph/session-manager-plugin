@@ -19,6 +19,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 	"text/template"
 )
 
@@ -45,7 +46,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("Error reading VERSION file. %v", err)
 	}
-	versionStr := string(versionContent)
+	versionStr := strings.TrimSpace(string(versionContent))
 
 	if err := ioutil.WriteFile(filepath.Join("VERSION"), []byte(versionStr), ReadWriteAccess); err != nil {
 		log.Fatalf("Error writing to VERSION file. %v", err)
