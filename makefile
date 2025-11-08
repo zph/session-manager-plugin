@@ -68,3 +68,7 @@ check-goreleaser: ## Validate goreleaser configuration
 .PHONY: version
 version: ## Generate version file
 	$(GO) run ./src/version/versiongenerator/version-gen.go
+
+.PHONY: tag
+tag:
+	git tag -a v0.0.0-$(shell cat VERSION) -m v0.0.0-$(shell cat VERSION)
