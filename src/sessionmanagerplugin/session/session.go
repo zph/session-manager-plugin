@@ -19,6 +19,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"os"
 	"time"
 
 	"github.com/aws/session-manager-plugin/src/config"
@@ -174,7 +175,18 @@ func ValidateInputAndStartSession(args []string, out io.Writer) {
 	for argsIndex := 1; argsIndex < len(args); argsIndex++ {
 		switch argsIndex {
 		case 1:
-			response = []byte(args[1])
+			// Check if args[1] is the AWS_SSM_START_SESSION_RESPONSE environment variable
+			if args[1] == "AWS_SSM_START_SESSION_RESPONSE" {
+				if envValue, exists := os.LookupEnv(args[1]); exists {
+					response = []byte(envValue)
+					// Unset the environment variable after reading it
+					os.Unsetenv(args[1])
+				} else {
+					response = []byte(args[1])
+				}
+			} else {
+				response = []byte(args[1])
+			}
 		case 2:
 			region = args[2]
 		case 3:

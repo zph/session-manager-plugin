@@ -48,7 +48,9 @@ func (p *BasicPortForwarding) IsStreamNotSet() (status bool) {
 
 // Stop closes the stream
 func (p *BasicPortForwarding) Stop() {
-	p.listener.Close()
+	if p.listener != nil {
+		p.listener.Close()
+	}
 	if p.stream != nil {
 		p.stream.Close()
 	}
@@ -131,6 +133,11 @@ func (p *BasicPortForwarding) startLocalConn(log log.T) (err error) {
 
 // startLocalListener starts a local listener to given address
 func (p *BasicPortForwarding) startLocalListener(log log.T, portNumber string) (err error) {
+	// Skip if listener already exists (for testing)
+	if p.listener != nil {
+		return nil
+	}
+
 	var displayMessage string
 	switch p.portParameters.LocalConnectionType {
 	case "unix":

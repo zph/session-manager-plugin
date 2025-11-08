@@ -23,7 +23,31 @@ import (
 	"github.com/aws/session-manager-plugin/src/log"
 	"github.com/aws/session-manager-plugin/src/message"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
+
+// MockNetListener is a mock net.Listener for testing
+type MockNetListener struct {
+	mock.Mock
+}
+
+func (m *MockNetListener) Accept() (net.Conn, error) {
+	args := m.Called()
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(net.Conn), args.Error(1)
+}
+
+func (m *MockNetListener) Close() error {
+	args := m.Called()
+	return args.Error(0)
+}
+
+func (m *MockNetListener) Addr() net.Addr {
+	args := m.Called()
+	return args.Get(0).(net.Addr)
+}
 
 // test readStream
 func TestReadStream(t *testing.T) {
@@ -31,26 +55,6 @@ func TestReadStream(t *testing.T) {
 	defer out.Close()
 
 	session := getSessionMock()
-
-	// Create mock net.Listener
-	type MockNetListener struct {
-		mock.Mock
-	}
-
-	func (m *MockNetListener) Accept() (net.Conn, error) {
-		args := m.Called()
-		return args.Get(0).(net.Conn), args.Error(1)
-	}
-
-	func (m *MockNetListener) Close() error {
-		args := m.Called()
-		return args.Error(0)
-	}
-
-	func (m *MockNetListener) Addr() net.Addr {
-		args := m.Called()
-		return args.Get(0).(net.Addr)
-	}
 
 	mockListener := &MockNetListener{}
 	mockListener.On("Accept").Return(nil, nil)
