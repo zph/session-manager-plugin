@@ -1,3 +1,28 @@
+# Purpose of the fork
+
+Upstream (aws) is largely unmaintained and non-responsive to patches. I'm maintaining my own cleaned up fork that incorporates selected bug patches and simplifications. My fork is based on formalco's fork and some of their journey through bugs is documented here: https://www.joinformal.com/blog/down-the-rabbit-hole-implementing-ssh-port-forwarding-over-aws-session-manager/.
+
+Use at your own risk.
+
+See Releases or ./Cask/README.md for install directions.
+
+On a mac it's as simple as downloading and installing a single binary release or using homebrew:
+
+```
+# Tap this repository
+brew tap zph/session-manager-plugin https://github.com/zph/session-manager-plugin
+
+# Then install
+brew install zph/session-manager-plugin/session-manager-plugin
+brew install zph/session-manager-plugin/ssmcli
+```
+
+
+
+
+------------------------------
+
+
 
 # Session Manager Plugin
 
