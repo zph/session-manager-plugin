@@ -1,0 +1,30 @@
+run:
+  timeout: 5m
+  tests: false
+  build-tags:
+    - darwin
+    - !windows
+
+linters:
+  enable:
+    - errcheck
+    - gosimple
+    - govet
+    - ineffassign
+    - staticcheck
+    - unused
+  disable:
+    - typecheck  # Disabled due to issues with embedded struct field resolution
+
+issues:
+  exclude-dirs:
+    - mocks
+  exclude-files:
+    - ".*_test\\.go$"
+    - "test_.*\\.go$"
+  exclude-rules:
+    # Exclude some linters from running on tests files.
+    - path: _test\.go
+      linters:
+        - errcheck
+        - govet

@@ -3,6 +3,7 @@
 # Variables
 GORELEASER := goreleaser
 GO := go
+GOLANGCI_LINT := golangci-lint
 
 .PHONY: help
 help: ## Show this help message
@@ -11,9 +12,27 @@ help: ## Show this help message
 	@echo 'Available targets:'
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "  %-20s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
+.PHONY: fmt
+fmt: ## Format Go code
+	$(GO) fmt ./...
+
+.PHONY: vet
+vet:
+	go vet ./...
+
+.PHONY: golangci-lint
+golangci-lint: ## Run golangci-lint
+	@if command -v $(GOLANGCI_LINT) >/dev/null 2>&1; then \
+		$(GOLANGCI_LINT) run --fast ./...; \
+	else \
+		echo "golangci-lint not found. Skipping (install with: go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest)"; \
+	fi
+
+.PHONY: lint
+lint: fmt vet ## Run all linting checks (fmt + vet)
+
 .PHONY: checkstyle
-checkstyle: ## Run checkstyle checks
-	./Tools/src/checkstyle.sh
+checkstyle: lint ## Run checkstyle checks (alias for lint)
 
 .PHONY: test
 test: ## Run all tests
@@ -53,13 +72,22 @@ release-dry-run: ## Test the release process without publishing
 
 .PHONY: install-tools
 install-tools: ## Install required build tools
-	@echo "Installing goreleaser..."
+	@echo "Installing build tools..."
 	@if ! command -v $(GORELEASER) >/dev/null 2>&1; then \
-		echo "Installing goreleaser via go install..."; \
+		echo "Installing goreleaser..."; \
 		$(GO) install github.com/goreleaser/goreleaser@latest; \
 	else \
-		echo "goreleaser is already installed"; \
+		echo "✓ goreleaser is already installed"; \
 	fi
+	@if ! command -v $(GOLANGCI_LINT) >/dev/null 2>&1; then \
+		echo "Installing golangci-lint..."; \
+		$(GO) install github.com/golangci/golangci-lint/cmd/golangci-lint@latest; \
+	else \
+		echo "✓ golangci-lint is already installed"; \
+	fi
+
+.PHONY: ci
+ci: lint test ## Run CI checks (lint + test)
 
 .PHONY: check-goreleaser
 check-goreleaser: ## Validate goreleaser configuration

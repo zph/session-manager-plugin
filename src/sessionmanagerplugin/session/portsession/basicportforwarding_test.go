@@ -100,7 +100,7 @@ func TestStartSessionTCPAcceptFailed(t *testing.T) {
 	basicPortForwarding := &BasicPortForwarding{
 		session:        getSessionMock(),
 		portParameters: PortParameters{PortNumber: "22", Type: "LocalPortForwarding"},
-		listener:       mockListener,  // Inject mock listener
+		listener:       mockListener, // Inject mock listener
 	}
 
 	// Call startLocalConn directly to test Accept failure
