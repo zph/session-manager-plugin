@@ -3,7 +3,6 @@ version: 2
 before:
   hooks:
     - go mod download
-    - go run ./src/version/versiongenerator/version-gen.go
 
 builds:
   # Session Manager Plugin
@@ -34,6 +33,8 @@ builds:
         goarch: arm64
     ldflags:
       - -s -w
+      - -X github.com/zph/session-manager-plugin/src/version.Version={{.Version}}
+      - -X github.com/zph/session-manager-plugin/src/version.GitCommit={{.ShortCommit}}
     flags:
       - -trimpath
 
@@ -58,6 +59,8 @@ builds:
         goarch: arm64
     ldflags:
       - -s -w
+      - -X github.com/zph/session-manager-plugin/src/version.Version={{.Version}}
+      - -X github.com/zph/session-manager-plugin/src/version.GitCommit={{.ShortCommit}}
     flags:
       - -trimpath
 
@@ -82,6 +85,8 @@ builds:
         goarch: arm64
     ldflags:
       - -s -w
+      - -X github.com/zph/session-manager-plugin/src/version.Version={{.Version}}
+      - -X github.com/zph/session-manager-plugin/src/version.GitCommit={{.ShortCommit}}
     flags:
       - -trimpath
 

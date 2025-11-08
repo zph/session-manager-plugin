@@ -159,7 +159,7 @@ func ValidateInputAndStartSession(args []string, out io.Writer) {
 			"Use the AWS CLI to start a session.\n\n")
 		return
 	} else if len(args) == 2 && args[1] == "--version" {
-		fmt.Fprintf(out, "%s\n", string(version.Version))
+		fmt.Fprintf(out, "%s (git:%s)\n", version.Version, version.GitCommit)
 		return
 	} else if len(args) >= 2 && len(args) < LegacyArgumentLength {
 		fmt.Fprintf(out, "\nUnknown operation %s. \nUse "+

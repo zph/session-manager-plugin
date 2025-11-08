@@ -76,9 +76,11 @@ build: ## Build binaries for all platforms using goreleaser
 
 .PHONY: build-local
 build-local: ## Build binary for current platform only
-	$(GO) build -ldflags "-s -w" -o bin/session-manager-plugin ./src/sessionmanagerplugin-main/main.go
-	$(GO) build -ldflags "-s -w" -o bin/ssmcli ./src/ssmcli-main/main.go
-	$(GO) build -ldflags "-s -w" -o bin/ssm-port-forward ./src/ssm-port-forward-main/main.go
+	$(eval VERSION := $(shell cat VERSION))
+	$(eval GITCOMMIT := $(shell git rev-parse --short HEAD)$(shell git diff-index --quiet HEAD -- || echo '-dirty'))
+	$(GO) build -ldflags "-s -w -X github.com/zph/session-manager-plugin/src/version.Version=$(VERSION) -X github.com/zph/session-manager-plugin/src/version.GitCommit=$(GITCOMMIT)" -o bin/session-manager-plugin ./src/sessionmanagerplugin-main/main.go
+	$(GO) build -ldflags "-s -w -X github.com/zph/session-manager-plugin/src/version.Version=$(VERSION) -X github.com/zph/session-manager-plugin/src/version.GitCommit=$(GITCOMMIT)" -o bin/ssmcli ./src/ssmcli-main/main.go
+	$(GO) build -ldflags "-s -w -X github.com/zph/session-manager-plugin/src/version.Version=$(VERSION) -X github.com/zph/session-manager-plugin/src/version.GitCommit=$(GITCOMMIT)" -o bin/ssm-port-forward ./src/ssm-port-forward-main/main.go
 
 .PHONY: snapshot
 snapshot: checkstyle test ## Create a snapshot release (no git tag required)
@@ -114,10 +116,6 @@ ci: lint test ## Run CI checks (lint + test)
 .PHONY: check-goreleaser
 check-goreleaser: ## Validate goreleaser configuration
 	$(GORELEASER) check
-
-.PHONY: version
-version: ## Generate version file
-	$(GO) run ./src/version/versiongenerator/version-gen.go
 
 .PHONY: tag
 tag:
