@@ -60,8 +60,5 @@ jobs:
           go-version-file: 'go.mod'
           cache: true
 
-      - name: Generate version
-        run: make version
-
       - name: Build local
         run: make build-local
