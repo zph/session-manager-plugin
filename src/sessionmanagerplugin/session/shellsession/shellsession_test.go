@@ -21,7 +21,6 @@ import (
 	"os/signal"
 	"syscall"
 	"testing"
-	"time"
 
 	"github.com/zph/session-manager-plugin/src/communicator/mocks"
 	"github.com/zph/session-manager-plugin/src/datachannel"
@@ -62,6 +61,8 @@ func TestInitialize(t *testing.T) {
 }
 
 func TestHandleControlSignals(t *testing.T) {
+	// Note: This test cannot use synctest because signal.Notify is a system call
+	// that operates outside the synctest bubble (not durably blocked)
 	session := session.Session{}
 	session.DataChannel = mockDataChannel
 	shellSession := ShellSession{}
@@ -81,7 +82,6 @@ func TestHandleControlSignals(t *testing.T) {
 		signal.Notify(signalCh, syscall.SIGINT, syscall.SIGQUIT, syscall.SIGTSTP)
 		shellSession.handleControlSignals(logger)
 		p.Signal(syscall.SIGINT)
-		time.Sleep(200 * time.Millisecond)
 		close(waitCh)
 	}()
 

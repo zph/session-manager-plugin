@@ -18,9 +18,8 @@ import (
 	"bytes"
 	"fmt"
 	"os"
-	"sync"
 	"testing"
-	"time"
+	"testing/synctest"
 
 	wsChannelMock "github.com/zph/session-manager-plugin/src/communicator/mocks"
 	dataChannelMock "github.com/zph/session-manager-plugin/src/datachannel/mocks"
@@ -129,40 +128,52 @@ func TestExecute(t *testing.T) {
 }
 
 func TestExecuteAndStreamMessageResendTimesOut(t *testing.T) {
-	sessionMock := &Session{}
-	sessionMock.DataChannel = mockDataChannel
-	SetupMockActions()
-	mockDataChannel.On("Open", mock.Anything).Return(nil)
+	synctest.Test(t, func(t *testing.T) {
+		// Create fresh mocks inside the synctest bubble
+		localMockDataChannel := &dataChannelMock.IDataChannel{}
+		localMockWsChannel := &wsChannelMock.IWebSocketChannel{}
 
-	isStreamMessageResendTimeout := make(chan bool, 1)
-	mockDataChannel.On("IsStreamMessageResendTimeout").Return(isStreamMessageResendTimeout)
+		sessionMock := &Session{}
+		sessionMock.DataChannel = localMockDataChannel
 
-	var wg sync.WaitGroup
-	wg.Add(1)
-	handleStreamMessageResendTimeout = func(session *Session, log log.T) {
-		time.Sleep(10 * time.Millisecond)
-		isStreamMessageResendTimeout <- true
-		wg.Done()
-		return
-	}
+		// Setup mock actions with local mocks
+		localMockDataChannel.On("Initialize", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return()
+		localMockDataChannel.On("SetWebsocket", mock.Anything, mock.Anything, mock.Anything).Return()
+		localMockDataChannel.On("GetWsChannel").Return(localMockWsChannel)
+		localMockDataChannel.On("RegisterOutputStreamHandler", mock.Anything, mock.Anything)
+		localMockDataChannel.On("ResendStreamDataMessageScheduler", mock.Anything).Return(nil)
+		localMockWsChannel.On("SetOnMessage", mock.Anything)
+		localMockWsChannel.On("SetOnError", mock.Anything)
 
-	isSessionTypeSetMock := make(chan bool, 1)
-	isSessionTypeSetMock <- true
-	mockDataChannel.On("IsSessionTypeSet").Return(isSessionTypeSetMock)
-	mockDataChannel.On("GetSessionType").Return("Standard_Stream")
-	mockDataChannel.On("GetSessionProperties").Return("SessionProperties")
+		localMockDataChannel.On("Open", mock.Anything).Return(nil)
 
-	setSessionHandlersWithSessionType = func(session *Session, log log.T) error {
-		return nil
-	}
+		// Create channels inside the bubble
+		isStreamMessageResendTimeout := make(chan bool, 1)
+		localMockDataChannel.On("IsStreamMessageResendTimeout").Return(isStreamMessageResendTimeout)
 
-	var err error
-	go func() {
-		err = sessionMock.Execute(logger)
-		time.Sleep(200 * time.Millisecond)
-	}()
-	wg.Wait()
-	assert.Nil(t, err)
+		handleStreamMessageResendTimeout = func(session *Session, log log.T) {
+			// Removed time.Sleep - synctest handles time advancement
+			isStreamMessageResendTimeout <- true
+			return
+		}
+
+		isSessionTypeSetMock := make(chan bool, 1)
+		isSessionTypeSetMock <- true
+		localMockDataChannel.On("IsSessionTypeSet").Return(isSessionTypeSetMock)
+		localMockDataChannel.On("GetSessionType").Return("Standard_Stream")
+		localMockDataChannel.On("GetSessionProperties").Return("SessionProperties")
+
+		setSessionHandlersWithSessionType = func(session *Session, log log.T) error {
+			return nil
+		}
+
+		var err error
+		go func() {
+			err = sessionMock.Execute(logger)
+		}()
+		synctest.Wait() // Wait for all goroutines to complete or block
+		assert.Nil(t, err)
+	})
 }
 
 func SetupMockActions() {

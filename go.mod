@@ -1,8 +1,8 @@
 module github.com/zph/session-manager-plugin
 
-go 1.24
+go 1.25
 
-toolchain go1.24.0
+toolchain go1.25.0
 
 require (
 	github.com/aws/aws-sdk-go v1.55.6
