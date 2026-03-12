@@ -96,6 +96,33 @@ func TestHandleDataTransferSrcToDst(t *testing.T) {
 	assert.EqualValues(t, outputMessage.Payload, msg)
 }
 
+// MUX-001: WHEN MuxClient.close is called with nil fields,
+// THEN it SHALL NOT panic.
+func TestMuxClientCloseWithNilFields(t *testing.T) {
+	assert.NotPanics(t, func() {
+		c := &MuxClient{}
+		c.close()
+	})
+}
+
+// MUX-002: WHEN MgsConn.close is called with nil fields,
+// THEN it SHALL NOT panic.
+func TestMgsConnCloseWithNilFields(t *testing.T) {
+	assert.NotPanics(t, func() {
+		c := &MgsConn{}
+		c.close()
+	})
+}
+
+// MUX-003: WHEN MuxPortForwarding.Stop is called with nil muxClient and mgsConn,
+// THEN it SHALL NOT panic.
+func TestMuxPortForwardingStopWithNilClients(t *testing.T) {
+	assert.NotPanics(t, func() {
+		p := &MuxPortForwarding{}
+		p.Stop()
+	})
+}
+
 func TestHandleDataTransferDstToSrc(t *testing.T) {
 	msg := make([]byte, 20)
 	out, in := net.Pipe()

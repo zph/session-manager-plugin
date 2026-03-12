@@ -29,13 +29,13 @@ import (
 	"sync"
 	"time"
 
+	"github.com/xtaci/smux"
 	"github.com/zph/session-manager-plugin/src/config"
 	"github.com/zph/session-manager-plugin/src/log"
 	"github.com/zph/session-manager-plugin/src/message"
 	"github.com/zph/session-manager-plugin/src/sessionmanagerplugin/session"
 	"github.com/zph/session-manager-plugin/src/sessionmanagerplugin/session/sessionutil"
 	"github.com/zph/session-manager-plugin/src/version"
-	"github.com/xtaci/smux"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -65,14 +65,24 @@ type MuxPortForwarding struct {
 }
 
 func (c *MgsConn) close() {
-	c.listener.Close()
-	c.conn.Close()
+	if c.listener != nil {
+		c.listener.Close()
+	}
+	if c.conn != nil {
+		c.conn.Close()
+	}
 }
 
 func (c *MuxClient) close() {
-	c.session.Close()
-	c.conn.Close()
-	c.localListener.Close()
+	if c.session != nil {
+		c.session.Close()
+	}
+	if c.conn != nil {
+		c.conn.Close()
+	}
+	if c.localListener != nil {
+		c.localListener.Close()
+	}
 }
 
 // IsStreamNotSet checks if stream is not set
