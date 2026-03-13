@@ -24,6 +24,10 @@ import (
 	"time"
 
 	"github.com/aws/aws-sdk-go/service/kms/kmsiface"
+	"github.com/google/uuid"
+	"github.com/gorilla/websocket"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	communicatorMocks "github.com/zph/session-manager-plugin/src/communicator/mocks"
 	"github.com/zph/session-manager-plugin/src/config"
 	"github.com/zph/session-manager-plugin/src/encryption"
@@ -31,10 +35,6 @@ import (
 	"github.com/zph/session-manager-plugin/src/log"
 	"github.com/zph/session-manager-plugin/src/message"
 	"github.com/zph/session-manager-plugin/src/version"
-	"github.com/google/uuid"
-	"github.com/gorilla/websocket"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 )
 
 var (
@@ -395,6 +395,76 @@ func TestDataChannelIncomingMessageHandlerForPausePublicationessage(t *testing.T
 	dataChannel.RegisterOutputStreamHandler(handler, true)
 	err := dataChannel.OutputMessageHandler(logger, stopHandler, sessionId, serializedClientMessages[0])
 	assert.Nil(t, err)
+}
+
+// READY-007
+func TestStartPublicationMessageClosesChannel(t *testing.T) {
+	dataChannel := getDataChannel()
+	mockChannel := &communicatorMocks.IWebSocketChannel{}
+	dataChannel.wsChannel = mockChannel
+
+	// Verify channel is not closed initially
+	select {
+	case <-dataChannel.GetStartPublicationReceived():
+		t.Fatal("StartPublicationReceived should not be closed initially")
+	default:
+		// expected
+	}
+
+	var handler OutputStreamDataMessageHandler = func(log log.T, outputMessage message.ClientMessage) (bool, error) {
+		return true, nil
+	}
+
+	var stopHandler Stop
+
+	dataChannel.RegisterOutputStreamHandler(handler, true)
+
+	// Send a StartPublicationMessage (needs non-empty payload for serialization)
+	clientMessage := getClientMessage(0, message.StartPublicationMessage, uint32(message.Output), []byte("ready"))
+	serialized, err := clientMessage.SerializeClientMessage(mockLogger)
+	assert.Nil(t, err)
+	err = dataChannel.OutputMessageHandler(logger, stopHandler, sessionId, serialized)
+	assert.Nil(t, err)
+
+	// Verify channel is now closed
+	select {
+	case <-dataChannel.GetStartPublicationReceived():
+		// expected - channel closed
+	default:
+		t.Fatal("StartPublicationReceived should be closed after receiving StartPublicationMessage")
+	}
+}
+
+// READY-007
+func TestStartPublicationMessageIdempotent(t *testing.T) {
+	dataChannel := getDataChannel()
+	mockChannel := &communicatorMocks.IWebSocketChannel{}
+	dataChannel.wsChannel = mockChannel
+
+	var handler OutputStreamDataMessageHandler = func(log log.T, outputMessage message.ClientMessage) (bool, error) {
+		return true, nil
+	}
+
+	var stopHandler Stop
+
+	dataChannel.RegisterOutputStreamHandler(handler, true)
+
+	// Send StartPublicationMessage twice - should not panic on double-close
+	for i := 0; i < 2; i++ {
+		clientMessage := getClientMessage(int64(i), message.StartPublicationMessage, uint32(message.Output), []byte("ready"))
+		serialized, err := clientMessage.SerializeClientMessage(mockLogger)
+		assert.Nil(t, err)
+		err = dataChannel.OutputMessageHandler(logger, stopHandler, sessionId, serialized)
+		assert.Nil(t, err)
+	}
+
+	// Verify channel is closed
+	select {
+	case <-dataChannel.GetStartPublicationReceived():
+		// expected
+	default:
+		t.Fatal("StartPublicationReceived should be closed")
+	}
 }
 
 func TestHandshakeRequestHandler(t *testing.T) {

@@ -25,6 +25,7 @@ import (
 	"github.com/zph/session-manager-plugin/src/config"
 
 	"github.com/aws/aws-sdk-go/service/ssm"
+	"github.com/google/uuid"
 	"github.com/zph/session-manager-plugin/src/datachannel"
 	"github.com/zph/session-manager-plugin/src/log"
 	"github.com/zph/session-manager-plugin/src/message"
@@ -32,7 +33,6 @@ import (
 	"github.com/zph/session-manager-plugin/src/sdkutil"
 	"github.com/zph/session-manager-plugin/src/sessionmanagerplugin/session/sessionutil"
 	"github.com/zph/session-manager-plugin/src/version"
-	"github.com/google/uuid"
 )
 
 const (
@@ -86,6 +86,10 @@ type Session struct {
 	DisplayMode                  sessionutil.DisplayMode
 	PortForwardingUseUnixSocket  bool
 	PortForwardingUnixSocketPath string
+	// READY-007, READY-008: Closed when agent signals readiness (StartPublicationMessage)
+	PortReady chan struct{}
+	// READY-003, READY-006: Receives error when agent reports connection failure (ConnectToPortError)
+	PortError chan error
 }
 
 type PortParameters struct {

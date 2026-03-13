@@ -28,6 +28,8 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/kms/kmsiface"
+	"github.com/google/uuid"
+	"github.com/gorilla/websocket"
 	"github.com/zph/session-manager-plugin/src/communicator"
 	"github.com/zph/session-manager-plugin/src/config"
 	"github.com/zph/session-manager-plugin/src/encryption"
@@ -35,8 +37,6 @@ import (
 	"github.com/zph/session-manager-plugin/src/message"
 	"github.com/zph/session-manager-plugin/src/service"
 	"github.com/zph/session-manager-plugin/src/version"
-	"github.com/google/uuid"
-	"github.com/gorilla/websocket"
 )
 
 type IDataChannel interface {
@@ -69,6 +69,7 @@ type IDataChannel interface {
 	GetSessionProperties() interface{}
 	GetWsChannel() communicator.IWebSocketChannel
 	SetWsChannel(wsChannel communicator.IWebSocketChannel)
+	GetStartPublicationReceived() <-chan struct{}
 	GetStreamDataSequenceNumber() int64
 	GetAgentVersion() string
 	SetAgentVersion(agentVersion string)
@@ -118,6 +119,10 @@ type DataChannel struct {
 
 	// AgentVersion received during handshake
 	agentVersion string
+
+	// READY-007: Closed when StartPublicationMessage is received from agent
+	startPublicationReceived chan struct{}
+	startPublicationOnce     sync.Once
 
 	mutex sync.Mutex
 }
@@ -196,6 +201,7 @@ func (dataChannel *DataChannel) Initialize(log log.T, clientId string, sessionId
 	dataChannel.isStreamMessageResendTimeout = make(chan bool, 1)
 	dataChannel.sessionType = ""
 	dataChannel.IsAwsCliUpgradeNeeded = isAwsCliUpgradeNeeded
+	dataChannel.startPublicationReceived = make(chan struct{})
 }
 
 // SetWebsocket function populates websocket channel object
@@ -436,7 +442,13 @@ func (dataChannel *DataChannel) OutputMessageHandler(log log.T, stopHandler Stop
 		return dataChannel.HandleAcknowledgeMessage(log, *outputMessage)
 	case message.ChannelClosedMessage:
 		dataChannel.HandleChannelClosedMessage(log, stopHandler, sessionID, *outputMessage)
-	case message.StartPublicationMessage, message.PausePublicationMessage:
+	case message.StartPublicationMessage:
+		// READY-007: Signal that agent is ready for data transfer
+		dataChannel.startPublicationOnce.Do(func() {
+			close(dataChannel.startPublicationReceived)
+		})
+		return nil
+	case message.PausePublicationMessage:
 		return nil
 	default:
 		log.Warn("Invalid message type received: %s", outputMessage.MessageType)
@@ -965,6 +977,18 @@ func (dataChannel *DataChannel) GetWsChannel() communicator.IWebSocketChannel {
 // SetWsChannel set WsChannel of the dataChannel
 func (dataChannel *DataChannel) SetWsChannel(wsChannel communicator.IWebSocketChannel) {
 	dataChannel.wsChannel = wsChannel
+}
+
+// GetStartPublicationReceived returns a channel that is closed when StartPublicationMessage is received.
+// READY-007
+func (dataChannel *DataChannel) GetStartPublicationReceived() <-chan struct{} {
+	return dataChannel.startPublicationReceived
+}
+
+// StartPublicationReceivedForTest returns the underlying channel for test manipulation.
+// This allows tests to simulate StartPublicationMessage receipt by closing the channel directly.
+func (dataChannel *DataChannel) StartPublicationReceivedForTest() chan struct{} {
+	return dataChannel.startPublicationReceived
 }
 
 // GetStreamDataSequenceNumber returns StreamDataSequenceNumber of the dataChannel

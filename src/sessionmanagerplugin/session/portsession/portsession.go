@@ -15,6 +15,9 @@
 package portsession
 
 import (
+	"encoding/binary"
+	"errors"
+
 	"github.com/zph/session-manager-plugin/src/config"
 	"github.com/zph/session-manager-plugin/src/jsonutil"
 	"github.com/zph/session-manager-plugin/src/log"
@@ -86,6 +89,20 @@ func (s *PortSession) Initialize(log log.T, sessionVar *session.Session) {
 	}
 
 	s.DataChannel.RegisterOutputStreamHandler(s.ProcessStreamMessagePayload, true)
+
+	// READY-007: Watch for StartPublicationMessage and signal PortReady
+	if s.Session.PortReady != nil {
+		go func() {
+			<-s.DataChannel.GetStartPublicationReceived()
+			select {
+			case <-s.Session.PortReady:
+				// already closed
+			default:
+				close(s.Session.PortReady)
+			}
+		}()
+	}
+
 	s.DataChannel.GetWsChannel().SetOnMessage(func(input []byte) {
 		if s.portSessionType.IsStreamNotSet() {
 			outputMessage := &message.ClientMessage{}
@@ -121,13 +138,55 @@ func (s *PortSession) SetSessionHandlers(log log.T) (err error) {
 	return
 }
 
-// ProcessStreamMessagePayload writes messages received on datachannel to stdout
+// ProcessStreamMessagePayload writes messages received on datachannel to stdout.
+// READY-005: Flag messages are intercepted and NOT written to the output stream.
+// READY-003, READY-006: ConnectToPortError flags signal failure via PortError channel.
 func (s *PortSession) ProcessStreamMessagePayload(log log.T, outputMessage message.ClientMessage) (isHandlerReady bool, err error) {
 	if s.portSessionType.IsStreamNotSet() {
 		log.Debugf("Waiting for streams to be established before processing incoming messages.")
 		return false, nil
 	}
+
+	// READY-005: Intercept flag messages — never write raw flag bytes to the output stream
+	if message.PayloadType(outputMessage.PayloadType) == message.Flag {
+		return s.handleFlagMessage(log, outputMessage)
+	}
+
 	log.Tracef("Received payload of size %d from datachannel.", outputMessage.PayloadLength)
 	err = s.portSessionType.WriteStream(outputMessage)
 	return true, err
+}
+
+// handleFlagMessage processes flag control messages from the agent.
+// READY-005, READY-006
+func (s *PortSession) handleFlagMessage(log log.T, outputMessage message.ClientMessage) (isHandlerReady bool, err error) {
+	if len(outputMessage.Payload) < 4 {
+		log.Warnf("Received flag message with invalid payload length: %d", len(outputMessage.Payload))
+		return true, nil
+	}
+
+	flagValue := message.PayloadTypeFlag(binary.BigEndian.Uint32(outputMessage.Payload[:4]))
+	log.Infof("Received flag message: %d", flagValue)
+
+	switch flagValue {
+	case message.ConnectToPortError:
+		// READY-003, READY-006: Signal error and terminate
+		log.Errorf("Agent reported ConnectToPortError: unable to connect to remote port %s", s.portParameters.PortNumber)
+		portErr := errors.New("ConnectToPortError: agent failed to connect to remote port " + s.portParameters.PortNumber)
+		if s.Session.PortError != nil {
+			select {
+			case s.Session.PortError <- portErr:
+			default:
+				log.Warnf("PortError channel full, error not delivered")
+			}
+		}
+	case message.DisconnectToPort:
+		log.Infof("Received DisconnectToPort flag for port %s", s.portParameters.PortNumber)
+	case message.TerminateSession:
+		log.Infof("Received TerminateSession flag")
+	default:
+		log.Warnf("Received unknown flag value: %d", flagValue)
+	}
+
+	return true, nil
 }

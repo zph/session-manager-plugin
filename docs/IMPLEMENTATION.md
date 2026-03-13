@@ -89,7 +89,68 @@ This project follows Test-Driven Development (TDD):
 - Never ignore errors in Go code
 - Mark incomplete implementations with TODO comments
 
+#### Port Readiness Detection
+
+**Specification:** See [docs/specs/port-ready.md](specs/port-ready.md)
+
+**Implementation Status:** ✅ Complete
+
+**Key Features:**
+- `-w/--wait` now waits for both local TCP listener AND remote port readiness
+- Uses `StartPublicationMessage` as positive readiness signal from SSM agent
+- Detects `ConnectToPortError` flag messages and reports failure immediately
+- Flag messages no longer leak raw binary data to output streams (bug fix)
+
+**Code References:**
+- `waitForReady()`: `src/ssm-port-forward-main/main.go` (replaces `waitForPort()`)
+- Session channels: `src/sessionmanagerplugin/session/session.go` (`PortReady`, `PortError`)
+- Flag handling: `src/sessionmanagerplugin/session/portsession/portsession.go` (`handleFlagMessage`)
+- StartPublication channel: `src/datachannel/streaming.go` (`startPublicationReceived`)
+- Unit tests: `src/ssm-port-forward-main/main_test.go`, `portsession_test.go`, `streaming_test.go`
+
+**Implementation Details:**
+
+1. **Positive Readiness Detection (READY-007, READY-008)**
+   - DataChannel exposes `StartPublicationReceived` channel, closed when agent sends `start_publication`
+   - PortSession watches this channel and closes `Session.PortReady` when fired
+   - `waitForReady()` blocks on `PortReady` after local port is confirmed up
+
+2. **ConnectToPortError Handling (READY-003, READY-005, READY-006)**
+   - `ProcessStreamMessagePayload` now intercepts `PayloadType == Flag` messages
+   - Decodes flag value from 4-byte big-endian payload
+   - `ConnectToPortError` sends error to `Session.PortError` channel
+   - Flag bytes are never written to the output stream (fixes data corruption bug)
+
+3. **Two-Phase Wait (READY-001, READY-002, READY-008)**
+   - Phase 1: Poll local TCP port until listener accepts connections
+   - Phase 2: Wait for `PortReady` (success), `PortError` (failure), or timeout
+   - Both phases watch `PortError` for early failure detection
+
+**Testing:**
+- `TestStartPublicationMessageClosesChannel` — datachannel signals on start_publication
+- `TestStartPublicationMessageIdempotent` — double start_publication doesn't panic
+- `TestProcessStreamMessagePayloadFlagNotWrittenToStream` — flag bytes not written to stream
+- `TestProcessStreamMessagePayloadConnectToPortError` — error sent to PortError
+- `TestInitializeSignalsReadyOnStartPublication` — PortReady closed on start_publication
+- `TestWaitForReadyLocalPortAndRemoteReady` — happy path
+- `TestWaitForReadyConnectToPortError` — ConnectToPortError fails wait
+- `TestWaitForReadyTimeout` — timeout fails wait
+- `TestWaitForReadyErrorBeforeLocalPort` — error before local port fails wait
+
+**Trade-offs:**
+- Relies on SSM agent sending `start_publication` for positive detection. If an older agent doesn't send it, `-w` will timeout instead of succeeding.
+- `--timeout` (default 30s) bounds the wait for agents that never send readiness signals.
+
 ## Recent Changes
+
+### 2026-03-12: Port Readiness Detection for `-w` flag
+- **What:** `-w/--wait` now waits for end-to-end tunnel readiness, not just local port
+- **Why:** Previous implementation only checked local TCP listener, missing remote connection failures
+- **How:** Wired up `start_publication` as positive signal, intercept `ConnectToPortError` flags, two-phase wait
+- **Testing:** 9 new unit tests across 3 packages, all pass with race detector
+- **Bug Fix:** Flag messages no longer write raw binary to output streams
+- **Specification:** docs/specs/port-ready.md
+- **Tag Range:** READY-001 through READY-008
 
 ### 2026-03-12: Fix MuxClient/MgsConn nil pointer panic on close
 - **What:** Added nil guards to `MuxClient.close()`, `MgsConn.close()`, and `MuxPortForwarding.Stop()`

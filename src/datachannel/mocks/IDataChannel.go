@@ -188,6 +188,26 @@ func (_m *IDataChannel) GetWsChannel() communicator.IWebSocketChannel {
 	return r0
 }
 
+/// GetStartPublicationReceived provides a mock function with no fields
+func (_m *IDataChannel) GetStartPublicationReceived() <-chan struct{} {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetStartPublicationReceived")
+	}
+
+	var r0 <-chan struct{}
+	if rf, ok := ret.Get(0).(func() <-chan struct{}); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(<-chan struct{})
+		}
+	}
+
+	return r0
+}
+
 // Initialize provides a mock function with given fields: _a0, clientId, sessionId, targetId, isAwsCliUpgradeNeeded
 func (_m *IDataChannel) Initialize(_a0 log.T, clientId string, sessionId string, targetId string, isAwsCliUpgradeNeeded bool) {
 	_m.Called(_a0, clientId, sessionId, targetId, isAwsCliUpgradeNeeded)

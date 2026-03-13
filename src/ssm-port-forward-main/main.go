@@ -29,16 +29,23 @@ import (
 	"time"
 
 	"github.com/aws/aws-sdk-go/service/ssm"
+	"github.com/google/uuid"
 	"github.com/zph/session-manager-plugin/src/datachannel"
 	"github.com/zph/session-manager-plugin/src/log"
 	"github.com/zph/session-manager-plugin/src/sdkutil"
 	"github.com/zph/session-manager-plugin/src/sessionmanagerplugin/session"
 	_ "github.com/zph/session-manager-plugin/src/sessionmanagerplugin/session/portsession"
-	"github.com/google/uuid"
 )
 
 const (
 	DefaultDocumentName = "AWS-StartPortForwardingSession"
+)
+
+var (
+	// READY-003, READY-006
+	errRemotePortFailed = errors.New("remote port connection failed")
+	// READY-004
+	errWaitTimeout = errors.New("wait timeout expired")
 )
 
 type PortForwardConfig struct {
@@ -201,12 +208,13 @@ Examples:
 `)
 }
 
+// SIGNAL-001, SIGNAL-002, SIGNAL-003, SIGNAL-007, SIGNAL-008
 func run(config *PortForwardConfig) error {
 	logger := log.Logger(true, "ssm-port-forward")
 
-	// Set up signal handling
+	// Set up signal handling - buffered to prevent signal loss
 	sigChan := make(chan os.Signal, 1)
-	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
 
 	// Create SSM client
 	sdkutil.SetRegionAndProfile(config.Region, config.Profile)
@@ -274,6 +282,9 @@ func run(config *PortForwardConfig) error {
 		ClientId:    clientId,
 		TargetId:    config.InstanceID,
 		DataChannel: &datachannel.DataChannel{},
+		// READY-007, READY-008: Readiness signaling channels
+		PortReady: make(chan struct{}),
+		PortError: make(chan error, 1),
 	}
 
 	// Start session in goroutine
@@ -284,10 +295,11 @@ func run(config *PortForwardConfig) error {
 		}
 	}()
 
+	// READY-001, READY-002, READY-007, READY-008
 	// Wait for port to be available if requested
 	if config.Wait {
 		logger.Infof("Waiting for port %s to be ready (timeout: %v)", actualLocalPort, config.Timeout)
-		if err := waitForPort(actualLocalPort, config.Timeout); err != nil {
+		if err := waitForReady(actualLocalPort, sess2.PortReady, sess2.PortError, config.Timeout); err != nil {
 			return fmt.Errorf("port forward failed to establish: %w", err)
 		}
 		logger.Infof("Port forward established on local port %s", actualLocalPort)
@@ -322,32 +334,93 @@ func run(config *PortForwardConfig) error {
 		return fmt.Errorf("failed to write output: %w", err)
 	}
 
-	// If not waiting, exit now (port forward continues in background via session-manager-plugin)
-	if !config.Wait {
-		return nil
-	}
-
-	// Wait for signal or error
+	// SIGNAL-004, SIGNAL-005, SIGNAL-006, SIGNAL-009, SIGNAL-010
+	// Always wait for signal or error with cleanup (SIGNAL-007, SIGNAL-008)
+	// This ensures proper cleanup regardless of --wait flag
 	select {
-	case <-sigChan:
-		logger.Info("Received interrupt signal, shutting down...")
-		return nil
+	case sig := <-sigChan:
+		logger.Infof("Received signal %v, initiating shutdown...", sig)
+		return cleanupSession(logger, sess2)
 	case err := <-sessionErr:
+		logger.Errorf("Session error: %v", err)
+		if cleanupErr := cleanupSession(logger, sess2); cleanupErr != nil {
+			logger.Warnf("Cleanup error during error handling: %v", cleanupErr)
+		}
 		return fmt.Errorf("session error: %w", err)
 	}
 }
 
-func waitForPort(port string, timeout time.Duration) error {
-	deadline := time.Now().Add(timeout)
-	for time.Now().Before(deadline) {
-		conn, err := net.DialTimeout("tcp", "localhost:"+port, 100*time.Millisecond)
-		if err == nil {
-			conn.Close()
-			return nil
+// cleanupSession performs orderly shutdown of the SSM session
+// SIGNAL-004, SIGNAL-005, SIGNAL-006, SIGNAL-009
+func cleanupSession(logger log.T, sess *session.Session) error {
+	// Create timeout context for cleanup - SIGNAL-009
+	cleanupTimeout := 5 * time.Second
+	done := make(chan error, 1)
+
+	go func() {
+		// SIGNAL-004: Close the data channel
+		if sess.DataChannel != nil {
+			logger.Debug("Closing data channel...")
+			if err := sess.DataChannel.Close(logger); err != nil {
+				logger.Warnf("Error closing data channel: %v", err)
+			}
+
+			// SIGNAL-005: End the session
+			logger.Debug("Ending session...")
+			if err := sess.DataChannel.EndSession(); err != nil {
+				logger.Warnf("Error ending session: %v", err)
+			}
 		}
-		time.Sleep(100 * time.Millisecond)
+		done <- nil
+	}()
+
+	// SIGNAL-009: Force exit if cleanup takes too long
+	select {
+	case err := <-done:
+		logger.Info("Session cleanup completed")
+		return err // SIGNAL-006: exit with status 0
+	case <-time.After(cleanupTimeout):
+		logger.Error("Cleanup timeout exceeded, forcing exit")
+		return fmt.Errorf("cleanup timeout exceeded")
 	}
-	return fmt.Errorf("timeout waiting for port %s", port)
+}
+
+// waitForReady waits for both the local TCP port AND remote readiness before returning.
+// READY-001, READY-002, READY-003, READY-004, READY-007, READY-008
+func waitForReady(port string, portReady <-chan struct{}, portError <-chan error, timeout time.Duration) error {
+	deadline := time.After(timeout)
+
+	// Phase 1: READY-002 — Wait for local TCP listener to accept connections
+	for {
+		conn, dialErr := net.DialTimeout("tcp", "localhost:"+port, 100*time.Millisecond)
+		if dialErr == nil {
+			conn.Close()
+			break // Local port ready
+		}
+		select {
+		case err := <-portError:
+			// READY-003: ConnectToPortError before local port is ready
+			return fmt.Errorf("%w: %v", errRemotePortFailed, err)
+		case <-deadline:
+			// READY-004: Timeout waiting for local port
+			return fmt.Errorf("%w: local port %s not ready", errWaitTimeout, port)
+		default:
+			time.Sleep(100 * time.Millisecond)
+		}
+	}
+
+	// Phase 2: READY-007, READY-008 — Wait for remote readiness signal from agent
+	select {
+	case <-portReady:
+		// READY-007: Agent confirmed remote port is ready via StartPublicationMessage
+		return nil
+	case err := <-portError:
+		// READY-003: ConnectToPortError after local port is up
+		return fmt.Errorf("%w: %v", errRemotePortFailed, err)
+	case <-deadline:
+		// READY-004: Timeout waiting for remote readiness
+		return fmt.Errorf("%w: remote port readiness not confirmed", errWaitTimeout)
+	}
 }
 
 // allocatePort uses the OS to allocate an available port.
