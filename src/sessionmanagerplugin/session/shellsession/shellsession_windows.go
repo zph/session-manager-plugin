@@ -20,9 +20,9 @@ package shellsession
 import (
 	"time"
 
+	"github.com/eiannone/keyboard"
 	"github.com/zph/session-manager-plugin/src/log"
 	"github.com/zph/session-manager-plugin/src/message"
-	"github.com/eiannone/keyboard"
 )
 
 // Byte array for key inputs

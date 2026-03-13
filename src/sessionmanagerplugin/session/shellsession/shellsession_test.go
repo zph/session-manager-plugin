@@ -22,6 +22,8 @@ import (
 	"syscall"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/zph/session-manager-plugin/src/communicator/mocks"
 	"github.com/zph/session-manager-plugin/src/datachannel"
 	dataChannelMock "github.com/zph/session-manager-plugin/src/datachannel/mocks"
@@ -29,8 +31,6 @@ import (
 	"github.com/zph/session-manager-plugin/src/message"
 	"github.com/zph/session-manager-plugin/src/sessionmanagerplugin/session"
 	"github.com/zph/session-manager-plugin/src/sessionmanagerplugin/session/sessionutil"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 )
 
 var (

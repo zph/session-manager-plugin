@@ -21,9 +21,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
 	communicatorMocks "github.com/zph/session-manager-plugin/src/communicator/mocks"
 	"github.com/zph/session-manager-plugin/src/log"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestResendStreamDataMessageScheduler(t *testing.T) {

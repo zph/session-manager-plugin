@@ -23,6 +23,7 @@ import (
 
 	sdkSession "github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ssm"
+	"github.com/google/uuid"
 	"github.com/zph/session-manager-plugin/src/datachannel"
 	"github.com/zph/session-manager-plugin/src/jsonutil"
 	"github.com/zph/session-manager-plugin/src/log"
@@ -31,7 +32,6 @@ import (
 	_ "github.com/zph/session-manager-plugin/src/sessionmanagerplugin/session/portsession"
 	_ "github.com/zph/session-manager-plugin/src/sessionmanagerplugin/session/shellsession"
 	"github.com/zph/session-manager-plugin/src/ssmclicommands/utils"
-	"github.com/google/uuid"
 )
 
 const (

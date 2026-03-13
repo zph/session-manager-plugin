@@ -24,9 +24,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/zph/session-manager-plugin/src/log"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
+	"github.com/zph/session-manager-plugin/src/log"
 )
 
 type EXPECTATION int

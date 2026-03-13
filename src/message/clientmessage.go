@@ -15,8 +15,8 @@
 package message
 
 import (
-	"github.com/zph/session-manager-plugin/src/log"
 	"github.com/google/uuid"
+	"github.com/zph/session-manager-plugin/src/log"
 )
 
 const (

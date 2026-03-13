@@ -21,8 +21,8 @@ import (
 	"math/rand"
 	"testing"
 
-	"github.com/zph/session-manager-plugin/src/config"
 	"github.com/stretchr/testify/assert"
+	"github.com/zph/session-manager-plugin/src/config"
 )
 
 var (

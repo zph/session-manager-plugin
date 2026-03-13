@@ -21,11 +21,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/zph/session-manager-plugin/src/datachannel"
 	"github.com/zph/session-manager-plugin/src/log"
 	"github.com/zph/session-manager-plugin/src/message"
 	"github.com/zph/session-manager-plugin/src/sessionmanagerplugin/session"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestTerminalResizeWhenSessionSizeDataIsNotEqualToActualSize(t *testing.T) {

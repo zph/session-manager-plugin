@@ -20,10 +20,10 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/gorilla/websocket"
 	"github.com/zph/session-manager-plugin/src/config"
 	"github.com/zph/session-manager-plugin/src/log"
 	"github.com/zph/session-manager-plugin/src/websocketutil"
-	"github.com/gorilla/websocket"
 )
 
 // IWebSocketChannel is the interface for DataChannel.

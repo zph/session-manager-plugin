@@ -18,12 +18,12 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/stretchr/testify/mock"
 	wsChannelMock "github.com/zph/session-manager-plugin/src/communicator/mocks"
 	"github.com/zph/session-manager-plugin/src/config"
 	"github.com/zph/session-manager-plugin/src/datachannel"
 	dataChannelMock "github.com/zph/session-manager-plugin/src/datachannel/mocks"
 	"github.com/zph/session-manager-plugin/src/message"
-	"github.com/stretchr/testify/mock"
 
 	"github.com/stretchr/testify/assert"
 )

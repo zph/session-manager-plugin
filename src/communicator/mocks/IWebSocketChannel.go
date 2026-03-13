@@ -4,8 +4,8 @@
 package mocks
 
 import (
-	log "github.com/zph/session-manager-plugin/src/log"
 	mock "github.com/stretchr/testify/mock"
+	log "github.com/zph/session-manager-plugin/src/log"
 
 	time "time"
 )

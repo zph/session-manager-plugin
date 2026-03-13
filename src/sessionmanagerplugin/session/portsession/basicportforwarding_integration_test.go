@@ -24,10 +24,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/zph/session-manager-plugin/src/communicator/mocks"
-	"github.com/zph/session-manager-plugin/src/log"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/zph/session-manager-plugin/src/communicator/mocks"
+	"github.com/zph/session-manager-plugin/src/log"
 )
 
 // This test passes ctrl+c signal which blocks running of all other tests.

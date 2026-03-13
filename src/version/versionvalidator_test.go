@@ -17,9 +17,9 @@ package version
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/zph/session-manager-plugin/src/config"
 	"github.com/zph/session-manager-plugin/src/log"
-	"github.com/stretchr/testify/assert"
 )
 
 type Comparison struct {

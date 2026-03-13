@@ -24,8 +24,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/zph/session-manager-plugin/src/log"
 	"github.com/google/uuid"
+	"github.com/zph/session-manager-plugin/src/log"
 )
 
 // DeserializeClientMessage deserializes the byte array into an ClientMessage message.
