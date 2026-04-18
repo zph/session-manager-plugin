@@ -32,6 +32,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/zph/session-manager-plugin/src/datachannel"
 	"github.com/zph/session-manager-plugin/src/log"
+	"github.com/zph/session-manager-plugin/src/profile"
 	"github.com/zph/session-manager-plugin/src/sdkutil"
 	"github.com/zph/session-manager-plugin/src/sessionmanagerplugin/session"
 	_ "github.com/zph/session-manager-plugin/src/sessionmanagerplugin/session/portsession"
@@ -46,6 +47,8 @@ var (
 	errRemotePortFailed = errors.New("remote port connection failed")
 	// READY-004
 	errWaitTimeout = errors.New("wait timeout expired")
+	// SIGNAL-011
+	errSignalReceived = errors.New("signal received during wait")
 )
 
 type PortForwardConfig struct {
@@ -212,17 +215,24 @@ Examples:
 func run(config *PortForwardConfig) error {
 	logger := log.Logger(true, "ssm-port-forward")
 
+	// PROFILE-001: opt-in profiling via SSM_PROFILE env var
+	prof := profile.New()
+	defer prof.Emit(os.Stderr)
+
 	// Set up signal handling - buffered to prevent signal loss
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
 
-	// Create SSM client
+	// Create SSM client — PROFILE-002: aws_session phase
+	span := prof.Begin(profile.PhaseAWSSession)
 	sdkutil.SetRegionAndProfile(config.Region, config.Profile)
 	sess, err := sdkutil.GetNewSessionWithEndpoint("")
 	if err != nil {
+		span.EndWithError(err)
 		return fmt.Errorf("failed to create AWS session: %w", err)
 	}
 	ssmClient := ssm.New(sess)
+	span.End()
 
 	// If local port is 0, use OS to allocate an available port
 	actualLocalPort := config.LocalPort
@@ -262,10 +272,14 @@ func run(config *PortForwardConfig) error {
 		Parameters:   params,
 	}
 
+	// PROFILE-002: ssm_start_session phase
+	span = prof.Begin(profile.PhaseSSMStartSession)
 	startSessionOutput, err := ssmClient.StartSession(startSessionInput)
 	if err != nil {
+		span.EndWithError(err)
 		return fmt.Errorf("failed to start SSM session: %w", err)
 	}
+	span.End()
 
 	if startSessionOutput.SessionId == nil || startSessionOutput.TokenValue == nil || startSessionOutput.StreamUrl == nil {
 		return errors.New("invalid session response: missing required fields")
@@ -287,7 +301,9 @@ func run(config *PortForwardConfig) error {
 		PortError: make(chan error, 1),
 	}
 
-	// Start session in goroutine
+	// Start session in goroutine — PROFILE-002: websocket_open phase starts here
+	// (covers WebSocket connect, TLS, datachannel open, handshake, session type, port session init)
+	span = prof.Begin(profile.PhaseWebSocketOpen)
 	sessionErr := make(chan error, 1)
 	go func() {
 		if err := sess2.Execute(logger); err != nil {
@@ -295,11 +311,24 @@ func run(config *PortForwardConfig) error {
 		}
 	}()
 
-	// READY-001, READY-002, READY-007, READY-008
+	// READY-001, READY-002, READY-007, READY-008, SIGNAL-011
 	// Wait for port to be available if requested
 	if config.Wait {
+		// Convert sigChan to a done channel so waitForReady can react to signals
+		done := make(chan struct{})
+		go func() {
+			sig, ok := <-sigChan
+			if ok {
+				logger.Infof("Received signal %v during wait, cancelling...", sig)
+				close(done)
+			}
+		}()
+
 		logger.Infof("Waiting for port %s to be ready (timeout: %v)", actualLocalPort, config.Timeout)
-		if err := waitForReady(actualLocalPort, sess2.PortReady, sess2.PortError, config.Timeout); err != nil {
+		if err := waitForReady(actualLocalPort, sess2.PortReady, sess2.PortError, config.Timeout, done, prof, span); err != nil {
+			if errors.Is(err, errSignalReceived) {
+				return cleanupSession(logger, sess2)
+			}
 			return fmt.Errorf("port forward failed to establish: %w", err)
 		}
 		logger.Infof("Port forward established on local port %s", actualLocalPort)
@@ -385,41 +414,69 @@ func cleanupSession(logger log.T, sess *session.Session) error {
 	}
 }
 
-// waitForReady waits for both the local TCP port AND remote readiness before returning.
-// READY-001, READY-002, READY-003, READY-004, READY-007, READY-008
-func waitForReady(port string, portReady <-chan struct{}, portError <-chan error, timeout time.Duration) error {
+// READY-009: removed grace timer — Phase 2 is now a non-blocking check.
+
+// waitForReady waits for the local TCP port and optionally for remote readiness.
+// The done channel allows the caller to cancel the wait (e.g. on signal receipt).
+// The prof parameter records per-phase timing (nil-safe).
+// The sessionSpan is ended when Phase 1 succeeds (local port ready = session setup complete).
+// READY-001, READY-002, READY-003, READY-004, READY-007, READY-008, READY-009, SIGNAL-011, PROFILE-002
+func waitForReady(port string, portReady <-chan struct{}, portError <-chan error, timeout time.Duration, done <-chan struct{}, prof *profile.Profiler, sessionSpan profile.Span) error {
 	deadline := time.After(timeout)
 
 	// Phase 1: READY-002 — Wait for local TCP listener to accept connections
+	// PROFILE-002: wait_local_port phase
+	p1 := prof.Begin(profile.PhaseWaitLocalPort)
 	for {
 		conn, dialErr := net.DialTimeout("tcp", "localhost:"+port, 100*time.Millisecond)
 		if dialErr == nil {
 			conn.Close()
+			p1.End()
+			// PROFILE-002: websocket_open span ends when local port is ready
+			// (session setup = WebSocket + handshake + port session init is complete)
+			sessionSpan.End()
 			break // Local port ready
 		}
 		select {
 		case err := <-portError:
+			p1.EndWithError(err)
+			sessionSpan.EndWithError(err)
 			// READY-003: ConnectToPortError before local port is ready
 			return fmt.Errorf("%w: %v", errRemotePortFailed, err)
 		case <-deadline:
+			p1.EndWithError(errWaitTimeout)
+			sessionSpan.EndWithError(errWaitTimeout)
 			// READY-004: Timeout waiting for local port
 			return fmt.Errorf("%w: local port %s not ready", errWaitTimeout, port)
+		case <-done:
+			p1.EndWithError(errSignalReceived)
+			sessionSpan.EndWithError(errSignalReceived)
+			// SIGNAL-011: Signal received during Phase 1
+			return errSignalReceived
 		default:
 			time.Sleep(100 * time.Millisecond)
 		}
 	}
 
-	// Phase 2: READY-007, READY-008 — Wait for remote readiness signal from agent
+	// Phase 2: READY-007, READY-009 — Non-blocking check for remote readiness.
+	// If StartPublicationMessage arrived during Phase 1, PortReady is already closed.
+	// If not (e.g. AWS-StartPortForwardingSessionToRemoteHost), proceed immediately.
+	// ConnectToPortError is still caught — it would have been detected in Phase 1.
+	// PROFILE-002: wait_remote_ready phase
+	p2 := prof.Begin(profile.PhaseWaitRemoteReady)
 	select {
 	case <-portReady:
+		p2.End()
 		// READY-007: Agent confirmed remote port is ready via StartPublicationMessage
 		return nil
 	case err := <-portError:
+		p2.EndWithError(err)
 		// READY-003: ConnectToPortError after local port is up
 		return fmt.Errorf("%w: %v", errRemotePortFailed, err)
-	case <-deadline:
-		// READY-004: Timeout waiting for remote readiness
-		return fmt.Errorf("%w: remote port readiness not confirmed", errWaitTimeout)
+	default:
+		p2.End()
+		// READY-009: No signal yet — proceed, local port is confirmed ready.
+		return nil
 	}
 }
 

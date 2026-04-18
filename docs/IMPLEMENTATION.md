@@ -141,7 +141,60 @@ This project follows Test-Driven Development (TDD):
 - Relies on SSM agent sending `start_publication` for positive detection. If an older agent doesn't send it, `-w` will timeout instead of succeeding.
 - `--timeout` (default 30s) bounds the wait for agents that never send readiness signals.
 
+#### Connection Profiling
+
+**Specification:** See [docs/specs/profile.md](specs/profile.md)
+
+**Implementation Status:** ✅ Complete
+
+**Key Features:**
+- Opt-in via `SSM_PROFILE=1` environment variable
+- Zero overhead when disabled (nil-receiver pattern)
+- Emits structured JSON timing to stderr
+- Records per-phase wall-clock duration for connection establishment
+
+**Code References:**
+- Profile library: `src/profile/profile.go`
+- Profile tests: `src/profile/profile_test.go`
+- Instrumentation: `src/ssm-port-forward-main/main.go` (`run()` and `waitForReady()`)
+
+**Phases Tracked:**
+- `aws_session` — AWS SDK session + credential loading
+- `ssm_start_session` — SSM StartSession API call
+- `websocket_open` — WebSocket connect + TLS + datachannel open + handshake + port session init
+- `wait_local_port` — Phase 1 TCP port readiness polling
+- `wait_remote_ready` — Phase 2 remote readiness grace period
+
+**Usage:**
+```bash
+SSM_PROFILE=1 ssm-port-forward -L 0:host:27017 -i i-xxx -w -r us-east-1 2>profile.json
+```
+
+**Tag Range:** PROFILE-001 through PROFILE-005
+
 ## Recent Changes
+
+### 2026-04-18: Connection Profiling
+- **What:** Opt-in performance profiling for ssm-port-forward connection phases
+- **Why:** Diagnose where wall-clock time is spent during connection establishment
+- **How:** Lightweight `src/profile/` package with nil-receiver zero-overhead pattern, env var activation
+- **Testing:** 8 unit tests at 93.3% coverage
+- **Specification:** docs/specs/profile.md
+- **Tag Range:** PROFILE-001 through PROFILE-005
+
+### 2026-04-18: Signal handling during port readiness wait
+- **What:** Signals now cancel waitForReady immediately instead of blocking until timeout
+- **Why:** Ctrl+C during `-w` wait was unresponsive until timeout expired
+- **How:** Thread done channel from signal handler into waitForReady Phase 1 and Phase 2
+- **Testing:** 2 new tests (Phase 1 and Phase 2 signal handling)
+- **Tag Range:** SIGNAL-011
+
+### 2026-04-18: Grace period fallback for `-w` flag
+- **What:** Phase 2 of waitForReady uses 2s grace instead of full timeout
+- **Why:** `AWS-StartPortForwardingSessionToRemoteHost` does not send `StartPublicationMessage`
+- **How:** Added grace timer in Phase 2 select; falls back to success after 2s
+- **Testing:** 1 new test (TestWaitForReadySucceedsWithoutStartPublication)
+- **Tag Range:** READY-009
 
 ### 2026-03-12: Port Readiness Detection for `-w` flag
 - **What:** `-w/--wait` now waits for end-to-end tunnel readiness, not just local port

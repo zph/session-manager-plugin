@@ -35,6 +35,9 @@ WHEN cleanup takes longer than 5 seconds, THEN the process SHALL force exit with
 ### SIGNAL-010
 WHEN a signal is received during session establishment, THEN the process SHALL abort and cleanup any partial state.
 
+### SIGNAL-011
+WHEN a signal is received while waitForReady is waiting for port readiness (Phase 1 or Phase 2), THEN waitForReady SHALL return promptly with an error so the process can initiate cleanup and exit.
+
 ## Implementation Notes
 
 The signal handler MUST:

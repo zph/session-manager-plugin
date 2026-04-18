@@ -130,3 +130,18 @@ The combined wait logic ensures positive detection of readiness via `start_publi
 Test each of the three outcomes independently: (1) `StartPublicationMessage` arrives before timeout, (2) `ConnectToPortError` arrives before timeout, (3) timeout expires with no signal.
 
 ---
+
+### Graceful Fallback for Missing StartPublicationMessage
+
+**READY-009:** Complex Unwanted Behaviour
+
+**Requirement:**
+While the `-w` flag is set AND the local TCP port is confirmed ready, IF the agent does not send a `StartPublicationMessage` within a short grace period, THEN the SSM Port Forward CLI SHALL treat the connection as ready and proceed.
+
+**Rationale:**
+Not all SSM document types send `StartPublicationMessage`. For example, `AWS-StartPortForwardingSessionToRemoteHost` may not emit this message. Blocking indefinitely (or until full timeout) on a signal that will never arrive renders the `-w` flag unusable for these document types. A short grace period preserves the benefit of positive readiness detection for agents that support it while falling back gracefully for those that do not.
+
+**Verification:**
+Test by creating a session where `PortReady` is never closed and verifying that `waitForReady` returns success after the grace period, not after the full timeout.
+
+---

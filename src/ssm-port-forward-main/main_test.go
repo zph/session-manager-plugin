@@ -24,7 +24,15 @@ import (
 	"syscall"
 	"testing"
 	"time"
+
+	"github.com/zph/session-manager-plugin/src/profile"
 )
+
+// neverDone is a channel that is never closed, for tests that don't need signal cancellation.
+var neverDone = make(chan struct{})
+
+// noSpan is a zero-value Span (nil profiler) for tests that don't need profiling.
+var noSpan profile.Span
 
 // TestSignalHandlerRegistration verifies that signal handler is registered
 // SIGNAL-007, SIGNAL-008
@@ -158,13 +166,13 @@ func TestWaitForReadyLocalPortAndRemoteReady(t *testing.T) {
 		close(portReady)
 	}()
 
-	err = waitForReady(port, portReady, portError, 5*time.Second)
+	err = waitForReady(port, portReady, portError, 5*time.Second, neverDone, nil, noSpan)
 	if err != nil {
 		t.Fatalf("Expected success, got error: %v", err)
 	}
 }
 
-// READY-003: ConnectToPortError during wait SHALL report failure
+// READY-003: ConnectToPortError already in channel when Phase 2 runs SHALL report failure
 func TestWaitForReadyConnectToPortError(t *testing.T) {
 	// Start a local TCP listener
 	listener, err := net.Listen("tcp", "localhost:0")
@@ -177,13 +185,11 @@ func TestWaitForReadyConnectToPortError(t *testing.T) {
 	portReady := make(chan struct{})
 	portError := make(chan error, 1)
 
-	// Simulate ConnectToPortError arriving after local port is up
-	go func() {
-		time.Sleep(50 * time.Millisecond)
-		portError <- errors.New("ConnectToPortError: agent failed to connect to remote port")
-	}()
+	// Error is already in the channel before waitForReady is called —
+	// simulates agent reporting ConnectToPortError during Phase 1 polling
+	portError <- errors.New("ConnectToPortError: agent failed to connect to remote port")
 
-	err = waitForReady(port, portReady, portError, 5*time.Second)
+	err = waitForReady(port, portReady, portError, 5*time.Second, neverDone, nil, noSpan)
 	if err == nil {
 		t.Fatal("Expected error, got nil")
 	}
@@ -198,7 +204,7 @@ func TestWaitForReadyTimeout(t *testing.T) {
 	portReady := make(chan struct{})
 	portError := make(chan error, 1)
 
-	err := waitForReady("0", portReady, portError, 200*time.Millisecond)
+	err := waitForReady("0", portReady, portError, 200*time.Millisecond, neverDone, nil, noSpan)
 	if err == nil {
 		t.Fatal("Expected timeout error, got nil")
 	}
@@ -206,6 +212,59 @@ func TestWaitForReadyTimeout(t *testing.T) {
 		t.Fatalf("Expected errWaitTimeout, got: %v", err)
 	}
 }
+
+// READY-009: WHEN the agent does not send StartPublicationMessage,
+// THEN waitForReady SHALL succeed after local port is confirmed ready
+// (graceful fallback matching pre-Phase-2 behavior).
+func TestWaitForReadySucceedsWithoutStartPublication(t *testing.T) {
+	// Start a local TCP listener to simulate the port being ready
+	listener, err := net.Listen("tcp", "localhost:0")
+	if err != nil {
+		t.Fatalf("Failed to start listener: %v", err)
+	}
+	defer listener.Close()
+	port := strconv.Itoa(listener.Addr().(*net.TCPAddr).Port)
+
+	// PortReady is never closed — simulates agent that doesn't send StartPublicationMessage
+	portReady := make(chan struct{})
+	portError := make(chan error, 1)
+
+	err = waitForReady(port, portReady, portError, 5*time.Second, neverDone, nil, noSpan)
+	if err != nil {
+		t.Fatalf("Expected success (graceful fallback), got error: %v", err)
+	}
+}
+
+// SIGNAL-011: WHEN a signal is received during waitForReady Phase 1,
+// THEN waitForReady SHALL return errSignalReceived promptly.
+func TestWaitForReadySignalDuringPhase1(t *testing.T) {
+	// No listener — Phase 1 will be polling
+	portReady := make(chan struct{})
+	portError := make(chan error, 1)
+	done := make(chan struct{})
+
+	// Close done after a short delay to simulate signal arrival
+	go func() {
+		time.Sleep(50 * time.Millisecond)
+		close(done)
+	}()
+
+	start := time.Now()
+	err := waitForReady("0", portReady, portError, 30*time.Second, done, nil, noSpan)
+	elapsed := time.Since(start)
+
+	if err == nil {
+		t.Fatal("Expected error, got nil")
+	}
+	if !errors.Is(err, errSignalReceived) {
+		t.Fatalf("Expected errSignalReceived, got: %v", err)
+	}
+	if elapsed > 2*time.Second {
+		t.Fatalf("Signal not handled promptly: took %v", elapsed)
+	}
+}
+
+
 
 // READY-003: Error before local port is ready SHALL report failure
 func TestWaitForReadyErrorBeforeLocalPort(t *testing.T) {
@@ -216,7 +275,7 @@ func TestWaitForReadyErrorBeforeLocalPort(t *testing.T) {
 	// Send error immediately
 	portError <- errors.New("ConnectToPortError: agent failed to connect")
 
-	err := waitForReady("0", portReady, portError, 5*time.Second)
+	err := waitForReady("0", portReady, portError, 5*time.Second, neverDone, nil, noSpan)
 	if err == nil {
 		t.Fatal("Expected error, got nil")
 	}
