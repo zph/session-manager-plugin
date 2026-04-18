@@ -96,6 +96,14 @@ uninstall: ## Remove installed binaries from PREFIX/bin
 	rm -f $(DESTDIR)$(PREFIX)/bin/ssmcli
 	rm -f $(DESTDIR)$(PREFIX)/bin/ssm-port-forward
 
+.PHONY: run
+run: build-local ## Run ssm-port-forward (pass ARGS, e.g. make run ARGS="-L 0:host:27017 -i i-xxx -w")
+	bin/ssm-port-forward $(ARGS)
+
+.PHONY: profile
+profile: build-local ## Run ssm-port-forward with connection profiling enabled
+	SSM_PROFILE=1 bin/ssm-port-forward $(ARGS)
+
 .PHONY: snapshot
 snapshot: checkstyle test ## Create a snapshot release (no git tag required)
 	$(GORELEASER) release --snapshot --clean
