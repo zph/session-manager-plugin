@@ -26,6 +26,9 @@ import (
 	"time"
 )
 
+// neverDone is a channel that is never closed, for tests that don't need signal cancellation.
+var neverDone = make(chan struct{})
+
 // TestSignalHandlerRegistration verifies that signal handler is registered
 // SIGNAL-007, SIGNAL-008
 func TestSignalHandlerRegistration(t *testing.T) {
@@ -158,7 +161,7 @@ func TestWaitForReadyLocalPortAndRemoteReady(t *testing.T) {
 		close(portReady)
 	}()
 
-	err = waitForReady(port, portReady, portError, 5*time.Second)
+	err = waitForReady(port, portReady, portError, 5*time.Second, neverDone)
 	if err != nil {
 		t.Fatalf("Expected success, got error: %v", err)
 	}
@@ -183,7 +186,7 @@ func TestWaitForReadyConnectToPortError(t *testing.T) {
 		portError <- errors.New("ConnectToPortError: agent failed to connect to remote port")
 	}()
 
-	err = waitForReady(port, portReady, portError, 5*time.Second)
+	err = waitForReady(port, portReady, portError, 5*time.Second, neverDone)
 	if err == nil {
 		t.Fatal("Expected error, got nil")
 	}
@@ -198,7 +201,7 @@ func TestWaitForReadyTimeout(t *testing.T) {
 	portReady := make(chan struct{})
 	portError := make(chan error, 1)
 
-	err := waitForReady("0", portReady, portError, 200*time.Millisecond)
+	err := waitForReady("0", portReady, portError, 200*time.Millisecond, neverDone)
 	if err == nil {
 		t.Fatal("Expected timeout error, got nil")
 	}
@@ -223,9 +226,74 @@ func TestWaitForReadySucceedsWithoutStartPublication(t *testing.T) {
 	portReady := make(chan struct{})
 	portError := make(chan error, 1)
 
-	err = waitForReady(port, portReady, portError, 5*time.Second)
+	err = waitForReady(port, portReady, portError, 5*time.Second, neverDone)
 	if err != nil {
 		t.Fatalf("Expected success (graceful fallback), got error: %v", err)
+	}
+}
+
+// SIGNAL-011: WHEN a signal is received during waitForReady Phase 1,
+// THEN waitForReady SHALL return errSignalReceived promptly.
+func TestWaitForReadySignalDuringPhase1(t *testing.T) {
+	// No listener — Phase 1 will be polling
+	portReady := make(chan struct{})
+	portError := make(chan error, 1)
+	done := make(chan struct{})
+
+	// Close done after a short delay to simulate signal arrival
+	go func() {
+		time.Sleep(50 * time.Millisecond)
+		close(done)
+	}()
+
+	start := time.Now()
+	err := waitForReady("0", portReady, portError, 30*time.Second, done)
+	elapsed := time.Since(start)
+
+	if err == nil {
+		t.Fatal("Expected error, got nil")
+	}
+	if !errors.Is(err, errSignalReceived) {
+		t.Fatalf("Expected errSignalReceived, got: %v", err)
+	}
+	if elapsed > 2*time.Second {
+		t.Fatalf("Signal not handled promptly: took %v", elapsed)
+	}
+}
+
+// SIGNAL-011: WHEN a signal is received during waitForReady Phase 2,
+// THEN waitForReady SHALL return errSignalReceived promptly.
+func TestWaitForReadySignalDuringPhase2(t *testing.T) {
+	// Start a listener so Phase 1 passes immediately
+	listener, err := net.Listen("tcp", "localhost:0")
+	if err != nil {
+		t.Fatalf("Failed to start listener: %v", err)
+	}
+	defer listener.Close()
+	port := strconv.Itoa(listener.Addr().(*net.TCPAddr).Port)
+
+	portReady := make(chan struct{})
+	portError := make(chan error, 1)
+	done := make(chan struct{})
+
+	// Close done after a short delay to simulate signal during Phase 2
+	go func() {
+		time.Sleep(50 * time.Millisecond)
+		close(done)
+	}()
+
+	start := time.Now()
+	err = waitForReady(port, portReady, portError, 30*time.Second, done)
+	elapsed := time.Since(start)
+
+	if err == nil {
+		t.Fatal("Expected error, got nil")
+	}
+	if !errors.Is(err, errSignalReceived) {
+		t.Fatalf("Expected errSignalReceived, got: %v", err)
+	}
+	if elapsed > 2*time.Second {
+		t.Fatalf("Signal not handled promptly: took %v", elapsed)
 	}
 }
 
@@ -238,7 +306,7 @@ func TestWaitForReadyErrorBeforeLocalPort(t *testing.T) {
 	// Send error immediately
 	portError <- errors.New("ConnectToPortError: agent failed to connect")
 
-	err := waitForReady("0", portReady, portError, 5*time.Second)
+	err := waitForReady("0", portReady, portError, 5*time.Second, neverDone)
 	if err == nil {
 		t.Fatal("Expected error, got nil")
 	}

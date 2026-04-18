@@ -46,6 +46,8 @@ var (
 	errRemotePortFailed = errors.New("remote port connection failed")
 	// READY-004
 	errWaitTimeout = errors.New("wait timeout expired")
+	// SIGNAL-011
+	errSignalReceived = errors.New("signal received during wait")
 )
 
 type PortForwardConfig struct {
@@ -295,11 +297,24 @@ func run(config *PortForwardConfig) error {
 		}
 	}()
 
-	// READY-001, READY-002, READY-007, READY-008
+	// READY-001, READY-002, READY-007, READY-008, SIGNAL-011
 	// Wait for port to be available if requested
 	if config.Wait {
+		// Convert sigChan to a done channel so waitForReady can react to signals
+		done := make(chan struct{})
+		go func() {
+			sig, ok := <-sigChan
+			if ok {
+				logger.Infof("Received signal %v during wait, cancelling...", sig)
+				close(done)
+			}
+		}()
+
 		logger.Infof("Waiting for port %s to be ready (timeout: %v)", actualLocalPort, config.Timeout)
-		if err := waitForReady(actualLocalPort, sess2.PortReady, sess2.PortError, config.Timeout); err != nil {
+		if err := waitForReady(actualLocalPort, sess2.PortReady, sess2.PortError, config.Timeout, done); err != nil {
+			if errors.Is(err, errSignalReceived) {
+				return cleanupSession(logger, sess2)
+			}
 			return fmt.Errorf("port forward failed to establish: %w", err)
 		}
 		logger.Infof("Port forward established on local port %s", actualLocalPort)
@@ -392,8 +407,9 @@ func cleanupSession(logger log.T, sess *session.Session) error {
 const remoteReadinessGrace = 2 * time.Second
 
 // waitForReady waits for the local TCP port and optionally for remote readiness.
-// READY-001, READY-002, READY-003, READY-004, READY-007, READY-008, READY-009
-func waitForReady(port string, portReady <-chan struct{}, portError <-chan error, timeout time.Duration) error {
+// The done channel allows the caller to cancel the wait (e.g. on signal receipt).
+// READY-001, READY-002, READY-003, READY-004, READY-007, READY-008, READY-009, SIGNAL-011
+func waitForReady(port string, portReady <-chan struct{}, portError <-chan error, timeout time.Duration, done <-chan struct{}) error {
 	deadline := time.After(timeout)
 
 	// Phase 1: READY-002 — Wait for local TCP listener to accept connections
@@ -410,6 +426,9 @@ func waitForReady(port string, portReady <-chan struct{}, portError <-chan error
 		case <-deadline:
 			// READY-004: Timeout waiting for local port
 			return fmt.Errorf("%w: local port %s not ready", errWaitTimeout, port)
+		case <-done:
+			// SIGNAL-011: Signal received during Phase 1
+			return errSignalReceived
 		default:
 			time.Sleep(100 * time.Millisecond)
 		}
@@ -433,6 +452,9 @@ func waitForReady(port string, portReady <-chan struct{}, portError <-chan error
 		// READY-009: Agent did not send StartPublicationMessage within grace period.
 		// Proceed anyway — local port is confirmed ready.
 		return nil
+	case <-done:
+		// SIGNAL-011: Signal received during Phase 2
+		return errSignalReceived
 	}
 }
 
