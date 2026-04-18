@@ -7,7 +7,7 @@
 - ✅ Documented synctest limitations
 
 ## Not Started / Future Work
-- [ ] Improve signal reception to kill process vs waiting for timeout
+- [x] Improve signal reception to kill process vs waiting for timeout
 
 ### Testing Improvements
 - [ ] Consider refactoring more unit tests to use synctest (non-I/O, non-signal tests)
