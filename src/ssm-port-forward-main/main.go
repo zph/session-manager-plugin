@@ -385,8 +385,14 @@ func cleanupSession(logger log.T, sess *session.Session) error {
 	}
 }
 
-// waitForReady waits for both the local TCP port AND remote readiness before returning.
-// READY-001, READY-002, READY-003, READY-004, READY-007, READY-008
+// remoteReadinessGrace is the time to wait for StartPublicationMessage after the local
+// port is ready. Not all SSM document types (e.g. AWS-StartPortForwardingSessionToRemoteHost)
+// send this message, so Phase 2 is best-effort with a short grace period.
+// READY-009
+const remoteReadinessGrace = 2 * time.Second
+
+// waitForReady waits for the local TCP port and optionally for remote readiness.
+// READY-001, READY-002, READY-003, READY-004, READY-007, READY-008, READY-009
 func waitForReady(port string, portReady <-chan struct{}, portError <-chan error, timeout time.Duration) error {
 	deadline := time.After(timeout)
 
@@ -409,7 +415,10 @@ func waitForReady(port string, portReady <-chan struct{}, portError <-chan error
 		}
 	}
 
-	// Phase 2: READY-007, READY-008 — Wait for remote readiness signal from agent
+	// Phase 2: READY-007, READY-008, READY-009 — Best-effort wait for remote readiness.
+	// Some document types (e.g. AWS-StartPortForwardingSessionToRemoteHost) may not send
+	// StartPublicationMessage, so we use a short grace period rather than the full timeout.
+	grace := time.After(remoteReadinessGrace)
 	select {
 	case <-portReady:
 		// READY-007: Agent confirmed remote port is ready via StartPublicationMessage
@@ -418,8 +427,12 @@ func waitForReady(port string, portReady <-chan struct{}, portError <-chan error
 		// READY-003: ConnectToPortError after local port is up
 		return fmt.Errorf("%w: %v", errRemotePortFailed, err)
 	case <-deadline:
-		// READY-004: Timeout waiting for remote readiness
+		// READY-004: Overall timeout expired during Phase 2
 		return fmt.Errorf("%w: remote port readiness not confirmed", errWaitTimeout)
+	case <-grace:
+		// READY-009: Agent did not send StartPublicationMessage within grace period.
+		// Proceed anyway — local port is confirmed ready.
+		return nil
 	}
 }
 

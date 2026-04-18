@@ -207,6 +207,28 @@ func TestWaitForReadyTimeout(t *testing.T) {
 	}
 }
 
+// READY-009: WHEN the agent does not send StartPublicationMessage,
+// THEN waitForReady SHALL succeed after local port is confirmed ready
+// (graceful fallback matching pre-Phase-2 behavior).
+func TestWaitForReadySucceedsWithoutStartPublication(t *testing.T) {
+	// Start a local TCP listener to simulate the port being ready
+	listener, err := net.Listen("tcp", "localhost:0")
+	if err != nil {
+		t.Fatalf("Failed to start listener: %v", err)
+	}
+	defer listener.Close()
+	port := strconv.Itoa(listener.Addr().(*net.TCPAddr).Port)
+
+	// PortReady is never closed — simulates agent that doesn't send StartPublicationMessage
+	portReady := make(chan struct{})
+	portError := make(chan error, 1)
+
+	err = waitForReady(port, portReady, portError, 5*time.Second)
+	if err != nil {
+		t.Fatalf("Expected success (graceful fallback), got error: %v", err)
+	}
+}
+
 // READY-003: Error before local port is ready SHALL report failure
 func TestWaitForReadyErrorBeforeLocalPort(t *testing.T) {
 	// Don't start a listener - port won't be available
