@@ -4,6 +4,7 @@
 GORELEASER := goreleaser
 GO := go
 GOLANGCI_LINT := golangci-lint
+PREFIX := $(HOME)/.local/bin
 
 .PHONY: help
 help: ## Show this help message
@@ -81,6 +82,19 @@ build-local: ## Build binary for current platform only
 	$(GO) build -ldflags "-s -w -X github.com/zph/session-manager-plugin/src/version.Version=$(VERSION) -X github.com/zph/session-manager-plugin/src/version.GitCommit=$(GITCOMMIT)" -o bin/session-manager-plugin ./src/sessionmanagerplugin-main/main.go
 	$(GO) build -ldflags "-s -w -X github.com/zph/session-manager-plugin/src/version.Version=$(VERSION) -X github.com/zph/session-manager-plugin/src/version.GitCommit=$(GITCOMMIT)" -o bin/ssmcli ./src/ssmcli-main/main.go
 	$(GO) build -ldflags "-s -w -X github.com/zph/session-manager-plugin/src/version.Version=$(VERSION) -X github.com/zph/session-manager-plugin/src/version.GitCommit=$(GITCOMMIT)" -o bin/ssm-port-forward ./src/ssm-port-forward-main/main.go
+
+.PHONY: install
+install: build-local ## Install binaries to PREFIX/bin (default: /usr/local/bin)
+	install -d $(DESTDIR)$(PREFIX)/bin
+	install -m 755 bin/session-manager-plugin $(DESTDIR)$(PREFIX)/bin/session-manager-plugin
+	install -m 755 bin/ssmcli $(DESTDIR)$(PREFIX)/bin/ssmcli
+	install -m 755 bin/ssm-port-forward $(DESTDIR)$(PREFIX)/bin/ssm-port-forward
+
+.PHONY: uninstall
+uninstall: ## Remove installed binaries from PREFIX/bin
+	rm -f $(DESTDIR)$(PREFIX)/bin/session-manager-plugin
+	rm -f $(DESTDIR)$(PREFIX)/bin/ssmcli
+	rm -f $(DESTDIR)$(PREFIX)/bin/ssm-port-forward
 
 .PHONY: snapshot
 snapshot: checkstyle test ## Create a snapshot release (no git tag required)
