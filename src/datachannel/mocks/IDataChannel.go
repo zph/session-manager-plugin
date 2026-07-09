@@ -188,7 +188,7 @@ func (_m *IDataChannel) GetWsChannel() communicator.IWebSocketChannel {
 	return r0
 }
 
-/// GetStartPublicationReceived provides a mock function with no fields
+// / GetStartPublicationReceived provides a mock function with no fields
 func (_m *IDataChannel) GetStartPublicationReceived() <-chan struct{} {
 	ret := _m.Called()
 

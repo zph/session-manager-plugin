@@ -33,7 +33,7 @@ builds:
         goarch: arm64
     ldflags:
       - -s -w
-      - -X github.com/zph/session-manager-plugin/src/version.Version={{.Version}}
+      - -X github.com/zph/session-manager-plugin/src/version.Version={{ if eq .Version "0.0.0-next" }}dev{{ else }}{{ replace .Version "0.0.0-" "" }}{{ end }}
       - -X github.com/zph/session-manager-plugin/src/version.GitCommit={{.ShortCommit}}
     flags:
       - -trimpath
@@ -59,7 +59,7 @@ builds:
         goarch: arm64
     ldflags:
       - -s -w
-      - -X github.com/zph/session-manager-plugin/src/version.Version={{.Version}}
+      - -X github.com/zph/session-manager-plugin/src/version.Version={{ if eq .Version "0.0.0-next" }}dev{{ else }}{{ replace .Version "0.0.0-" "" }}{{ end }}
       - -X github.com/zph/session-manager-plugin/src/version.GitCommit={{.ShortCommit}}
     flags:
       - -trimpath
@@ -85,7 +85,7 @@ builds:
         goarch: arm64
     ldflags:
       - -s -w
-      - -X github.com/zph/session-manager-plugin/src/version.Version={{.Version}}
+      - -X github.com/zph/session-manager-plugin/src/version.Version={{ if eq .Version "0.0.0-next" }}dev{{ else }}{{ replace .Version "0.0.0-" "" }}{{ end }}
       - -X github.com/zph/session-manager-plugin/src/version.GitCommit={{.ShortCommit}}
     flags:
       - -trimpath

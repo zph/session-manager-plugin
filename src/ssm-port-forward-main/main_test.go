@@ -264,8 +264,6 @@ func TestWaitForReadySignalDuringPhase1(t *testing.T) {
 	}
 }
 
-
-
 // READY-003: Error before local port is ready SHALL report failure
 func TestWaitForReadyErrorBeforeLocalPort(t *testing.T) {
 	// Don't start a listener - port won't be available

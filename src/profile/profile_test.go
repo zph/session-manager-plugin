@@ -150,12 +150,12 @@ func TestEmitOutputsJSON(t *testing.T) {
 // PROFILE-002: Phase String() SHALL return snake_case names.
 func TestPhaseStringNames(t *testing.T) {
 	expected := map[Phase]string{
-		PhaseAWSSession:       "aws_session",
-		PhaseSSMStartSession:  "ssm_start_session",
-		PhaseWebSocketOpen:    "websocket_open",
-		PhaseSessionTypeSet:   "session_type_set",
-		PhaseWaitLocalPort:    "wait_local_port",
-		PhaseWaitRemoteReady:  "wait_remote_ready",
+		PhaseAWSSession:      "aws_session",
+		PhaseSSMStartSession: "ssm_start_session",
+		PhaseWebSocketOpen:   "websocket_open",
+		PhaseSessionTypeSet:  "session_type_set",
+		PhaseWaitLocalPort:   "wait_local_port",
+		PhaseWaitRemoteReady: "wait_remote_ready",
 	}
 
 	for phase, name := range expected {

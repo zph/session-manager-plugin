@@ -39,6 +39,7 @@ checkstyle: lint ## Run checkstyle checks (alias for lint)
 test: ## Run all tests
 	$(GO) clean -testcache
 	$(GO) test -cover -gcflags "-N -l" ./src/... -test.paniconexit0=false
+	$(MAKE) test-release-e2e
 
 .PHONY: test-verbose
 test-verbose: ## Run tests with verbose output
@@ -65,6 +66,10 @@ test-short: ## Run only fast unit tests (skip slow integration tests)
 test-integration: ## Run only slow integration tests
 	$(GO) clean -testcache
 	$(GO) test -tags=integration -cover ./src/...
+
+.PHONY: test-release-e2e
+test-release-e2e: ## Try release artifact SSM E2E validation, warning instead of failing
+	$(GO) test -v -tags=release_e2e -run TestGoReleaserSSMPortForwardReleaseArtifactE2E -count=1 -timeout=5m ./src/ssm-port-forward-main
 
 .PHONY: clean
 clean: ## Clean build artifacts
