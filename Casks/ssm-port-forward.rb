@@ -3,7 +3,7 @@ cask "ssm-port-forward" do
   name "ssm-port-forward"
   desc "SSH-style port forwarding for AWS SSM sessions with multi-hop support"
   homepage "https://github.com/zph/session-manager-plugin"
-  version "0.0.0-1.2.694.8"
+  version "0.0.0-1.2.694.9"
 
   livecheck do
     skip "Auto-generated on release."
@@ -15,12 +15,12 @@ cask "ssm-port-forward" do
     on_intel do
       url "https://github.com/zph/session-manager-plugin/releases/download/v#{version}/ssm-port-forward_#{version}_darwin_x86_64.tar.gz",
         verified: "github.com/zph/session-manager-plugin"
-      sha256 "7c3f15cd3b2d50bdbbd5fc713286729d163d26c3a93cfa7a175c886f624acbdd"
+      sha256 "74af1d396a7cb17ebced338653aef8982c02bc225f55eb311f50fe103b87608d"
     end
     on_arm do
       url "https://github.com/zph/session-manager-plugin/releases/download/v#{version}/ssm-port-forward_#{version}_darwin_arm64.tar.gz",
         verified: "github.com/zph/session-manager-plugin"
-      sha256 "5e4776cb83fff444188497c1bfa7b09f4000401fc05bdde13f97c23caf89e668"
+      sha256 "c23563a5ea29223a9a962a1cfda503c225d2dff2e942a9a1b0e728503bc08340"
     end
   end
 
@@ -28,12 +28,12 @@ cask "ssm-port-forward" do
     on_intel do
       url "https://github.com/zph/session-manager-plugin/releases/download/v#{version}/ssm-port-forward_#{version}_linux_x86_64.tar.gz",
         verified: "github.com/zph/session-manager-plugin"
-      sha256 "7ebbf01ee09df528304efd90f6c093560f503ef9056f6fbf5cd25d8106629f24"
+      sha256 "52cd855e41803d942240a753f405a68b8193f97defea6e1c2d43dd9a12ef8212"
     end
     on_arm do
       url "https://github.com/zph/session-manager-plugin/releases/download/v#{version}/ssm-port-forward_#{version}_linux_arm64.tar.gz",
         verified: "github.com/zph/session-manager-plugin"
-      sha256 "f5bbea9c608a448fb81acae6cbd3f6da0562460a665fe99d0014d1c183ef026c"
+      sha256 "1422cd719544ff171a40f365879e14d422e069792bec5072a08143a4efb5c0f9"
     end
   end
 
